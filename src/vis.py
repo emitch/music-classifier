@@ -5,6 +5,21 @@ import ast
 import numpy as np
 import matplotlib.pyplot as plt
 
+num_plots = 0
+
+def hist_of_points(values, feature_name, graph_title):
+    global num_plots
+    num_plots += 1
+    
+    plt.figure(num_plots)
+    plt.hist(values, facecolor='dimgray')
+    
+    plt.xlabel(feature_name)
+    plt.ylabel('Occurrences')
+    plt.title(title)
+    
+    plt.show()
+
 def present_results(pred_data, ref_data):
     correct_counts = defaultdict(int)
     incorrect_counts = defaultdict(int)
@@ -60,7 +75,9 @@ def present_results(pred_data, ref_data):
     colors = ['dimgray', 'red', 'brown', 'darkgray', 'yellow', 'palegreen', 
         'seagreen', 'deepskyblue', 'navy', 'deeppink']
     
-    plt.figure(1)
+    global num_plots
+    num_plots += 1
+    plt.figure(num_plots)
     p_correct = plt.bar(ind, correct_y, width, color='.75', edgecolor='k')
 
     plt.ylabel('%% Correct')
@@ -68,11 +85,9 @@ def present_results(pred_data, ref_data):
     plt.xticks(ind + width / 2., correct_x, rotation='40')
     plt.yticks(np.arange(0, 1.05, .1))
     
-    plt.show()
-    
     # show the misses organized by their actual category
-    
-    plt.figure(2)
+    num_plots += 1
+    plt.figure(num_plots)
     
     plots = []
     for index, cat in enumerate(categories):
@@ -87,11 +102,10 @@ def present_results(pred_data, ref_data):
     plt.yticks(np.arange(0, int(max(pred_cumul) * 1.5), 10))
     plt.legend(plots, categories, ncol=4)
     
-    plt.show()
-    
     # show the misses organized by their predicted category
     
-    plt.figure(3)
+    num_plots += 1
+    plt.figure(num_plots)
     
     plots = []
     for index, cat in enumerate(categories):
