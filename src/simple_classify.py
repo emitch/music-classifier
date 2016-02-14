@@ -2,6 +2,7 @@ import os, random
 from sklearn.naive_bayes import GaussianNB
 import numpy as np
 import scipy.io as sio
+import vis
 
 
 def build_model(params, data):
@@ -47,7 +48,7 @@ def extract_params(param_names, structure):
 
     return extracted
 
-def load_songs(data_folder = 'data'):
+def load_songs(data_folder = '../data'):
     # load in data as list of matlab structs
 
     # initialize empty list
@@ -60,10 +61,24 @@ def load_songs(data_folder = 'data'):
             if file.endswith('.mat'):
                 # load only data from files, using corresponding path
                 # add to list of song data
-                if random.randrange(10) == 0:
-                    songs.append(sio.loadmat(path + '/' + file)['DAT'])
+
+                songs.append(sio.loadmat(path + '/' + file)['DAT'])
 
     return songs
+
+def genre_as_int(genre):
+    # take a genre name and return its integer classifier
+    genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
+        'jazz', 'metal', 'pop', 'reggae', 'rock']
+
+    return genres.index(genre)
+
+def int_as_genre(number):
+    # take an integer and return its string genre
+    genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
+        'jazz', 'metal', 'pop', 'reggae', 'rock']
+    
+    return genres[number-1]
 
 # run a shitty classification using only tempo and key
 if __name__ == '__main__':
@@ -94,4 +109,9 @@ if __name__ == '__main__':
     guessed_genres = model.predict(data_trimmed[~mask])
     correct_genres = data_genres[~mask]
 
+    guessed_genres = [int_as_genre(int(genre)) for genre in guessed_genres]
+    correct_genres = [int_as_genre(int(genre)) for genre in correct_genres]
+
+
+    vis.present_results(guessed_genres, correct_genres)
     # save these two and return them for plotting/evaluation

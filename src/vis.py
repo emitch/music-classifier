@@ -5,23 +5,26 @@ import ast
 import numpy as np
 import matplotlib.pyplot as plt
 
-def present_results(pred_path, ref_path):
-    # get the individual entries from each file
-    pred_data = [line.rstrip('\n') for line in open(pred_path)]
-    ref_data = [line.rstrip('\n') for line in open(ref_path)]
-
+def present_results(pred_data, ref_data):
     correct_counts = defaultdict(int)
+    incorrect_counts = defaultdict(int)
+    correct_percents = defaultdict(float)
 
     # get the categories in the reference list
-    for pred, ref in zip(pred_data, ref_data):
-        if len(ref) == 0:
-            continue
-        if len(pred) == 0:
-            continue
-        
+    for pred, ref in zip(pred_data, ref_data):  
         if pred == ref:
             correct_counts[ref] += 1
-            
+            incorrect_counts[ref] += 0
+        else:
+            correct_counts[ref] += 0
+            incorrect_counts[ref] += 1
+
+    for key in correct_counts:
+        for index, value in enumerate(correct_counts[key]):
+            correct_percents[key][index] = correct_counts[key] / (correct_counts[key] + incorrect_counts[key])
+
+    print(correct_percents)
+
     # reference list of the categories we've seen
     categories = list(correct_counts.keys())
     categories.sort()
@@ -29,25 +32,24 @@ def present_results(pred_path, ref_path):
     # x and y values for charting correct counts
     correct_x = []
     correct_y = []
-
-    for cat in categories:
-        correct_x.append(cat)
-        correct_y.append(correct_counts[cat])
     
     ref_dict = {}    # arranged by real category
     pred_dict = {}   # arranged by predicted category
+
+    print(categories)
+
+    for cat in categories:
+        ref_dict[cat] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        pred_dict[cat] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        correct_x.append(cat)
+        correct_y.append(correct_percents[cat])
 
     # get incorrect prediction data
     for pred, ref in zip(pred_data, ref_data):
         if pred != ref:
             ref_idx = categories.index(ref)
             pred_idx = categories.index(pred)
-        
-            if ref not in ref_dict:
-                ref_dict[ref] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            if pred not in pred_dict:
-                pred_dict[pred] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                
+            
             ref_dict[ref][pred_idx] += 1
             pred_dict[pred][ref_idx] += 1
     
@@ -64,10 +66,10 @@ def present_results(pred_path, ref_path):
     plt.figure(1)
     p_correct = plt.bar(ind, correct_y, width, color='.75', edgecolor='k')
 
-    plt.ylabel('Number Correct')
+    plt.ylabel('%% Correct')
     plt.title('Correct Predictions by Category')
     plt.xticks(ind + width / 2., correct_x, rotation='40')
-    plt.yticks(np.arange(0, 100, 10))
+    plt.yticks(np.arange(0, 1.05, .1))
     
     plt.show()
     
