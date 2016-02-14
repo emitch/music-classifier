@@ -1,6 +1,8 @@
-import os, sklearn
+import os, random
+from sklearn.naive_bayes import GaussianNB
 import numpy as np
 import scipy.io as sio
+
 
 def build_model(params, data):
     """ 
@@ -8,7 +10,7 @@ def build_model(params, data):
     data and return a gaussian naive bayes model to represent the data
     """
     # initialize model
-    model = sklearn.naive_bayes.GaussianNB()
+    model = GaussianNB()
     # fit model (woah so simple!)
     model.fit(params, data)
 
@@ -25,20 +27,21 @@ def extract_params(param_names, structure):
     n_trials = len(structure)
     # figure out how large to make array
     for param in param_names:
-        array_length += np.asarray(structure[param][0]).size
+        # structure is frustratingly complicated w/nested arrays
+        array_length += structure[0][param][0][0].size
 
-    extracted = np.empty([array_length, n_trials])
+    extracted = np.empty([n_trials, array_length])
 
     # loop through each parameter name and get it from structure
     for i in range(n_trials):
         entry = np.empty([0])
         for param in param_names:
-            # get field of structure, should work like a dictionary
-            arr = np.asarray(structure[param][i])
+            # get field of structure, should work sorta like a dictionary
+            arr = structure[i][param][0][0]
             # reshape and add to cumulative structure
             # final version will be a matrix, each column a parameter,
             # each row a single observation
-            np.append(entry, np.reshape(arr, [1, arr.size]))
+            entry = np.append(entry, np.reshape(arr, [1, arr.size]))
         # add row to big structure
         extracted[i,:] = entry
 
@@ -57,7 +60,8 @@ def load_songs(data_folder = 'data'):
             if file.endswith('.mat'):
                 # load only data from files, using corresponding path
                 # add to list of song data
-                songs.append(sio.loadmat(path + '/' + file)['DAT'])
+                if random.randrange(10) == 0:
+                    songs.append(sio.loadmat(path + '/' + file)['DAT'])
 
     return songs
 
@@ -70,10 +74,11 @@ if __name__ == '__main__':
     # trim to only key and tempo for each song
     #### I HAVE NOT ACTUALLY TESTED THIS, HOPEFULLY YOU GET WHAT I MEANT
     data_trimmed = extract_params(['key', 'tempo'], data_raw)
-    data_genres = extract_params(['genre'], data_raw)
+    data_genres = extract_params(['class'], data_raw)
 
     # select training set using boolean mask of a random subset
-    training_indices = random.sample(range(data_trimmed.shape[0]))
+    training_indices = random.sample(range(data_trimmed.shape[0]), data_trimmed.shape[0]//2)
+
     mask = np.zeros(data_trimmed.shape[0], dtype=bool)
     mask[training_indices] = True
 
