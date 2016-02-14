@@ -20,10 +20,7 @@ def present_results(pred_data, ref_data):
             incorrect_counts[ref] += 1
 
     for key in correct_counts:
-        for index, value in enumerate(correct_counts[key]):
-            correct_percents[key][index] = correct_counts[key] / (correct_counts[key] + incorrect_counts[key])
-
-    print(correct_percents)
+        correct_percents[key] = correct_counts[key] / (correct_counts[key] + incorrect_counts[key])
 
     # reference list of the categories we've seen
     categories = list(correct_counts.keys())
@@ -35,8 +32,8 @@ def present_results(pred_data, ref_data):
     
     ref_dict = {}    # arranged by real category
     pred_dict = {}   # arranged by predicted category
-
-    print(categories)
+    ref_cumul = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    pred_cumul = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     for cat in categories:
         ref_dict[cat] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -73,22 +70,21 @@ def present_results(pred_data, ref_data):
     
     plt.show()
     
-    # show the misses organized by their real category
+    # show the misses organized by their actual category
     
     plt.figure(2)
     
     plots = []
     for index, cat in enumerate(categories):
-        if index == 0:
-            plots.append(plt.bar(ind, pred_dict[cat], width, color=colors[index])[0])
-        else:
-            plots.append(plt.bar(ind, pred_dict[cat], width, color=colors[index], bottom = pred_dict[categories[index - 1]])[0])
-
+        plots.append(plt.bar(ind, pred_dict[cat], width, color=colors[index], bottom = pred_cumul)[0])
+        for idx, val in enumerate(pred_dict[cat]):
+            pred_cumul[idx] += val
+    
     plt.ylabel('# Incorrect Predictions')
     plt.xlabel('Actual Genre')
     plt.title('Incorrect Predictions by Actual Genre')
     plt.xticks(ind + width / 2., categories, rotation='40')
-    plt.yticks(np.arange(0, 65, 10))
+    plt.yticks(np.arange(0, int(max(pred_cumul) * 1.5), 10))
     plt.legend(plots, categories, ncol=4)
     
     plt.show()
@@ -99,16 +95,15 @@ def present_results(pred_data, ref_data):
     
     plots = []
     for index, cat in enumerate(categories):
-        if index == 0:
-            plots.append(plt.bar(ind, ref_dict[cat], width, color=colors[index])[0])
-        else:
-            plots.append(plt.bar(ind, ref_dict[cat], width, color=colors[index], bottom = ref_dict[categories[index - 1]])[0])
+        plots.append(plt.bar(ind, ref_dict[cat], width, color=colors[index], bottom = ref_cumul)[0])
+        for idx, val in enumerate(ref_dict[cat]):
+            ref_cumul[idx] += val
 
     plt.ylabel('# Incorrect Predictions')
     plt.xlabel('Predicted Genre')
     plt.title('Incorrect Predictions by Predicted Genre')
     plt.xticks(ind + width / 2., categories, rotation='40')
-    plt.yticks(np.arange(0, 65, 10))
+    plt.yticks(np.arange(0, int(max(ref_cumul) * 1.4), 10))
     plt.legend(plots, categories, ncol=4)
     
     plt.show()
