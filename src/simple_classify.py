@@ -4,7 +4,6 @@ import numpy as np
 import scipy.io as sio
 import vis
 
-
 def build_model(params, data):
     """ 
     take an array of parameter values and the corresponding observed 
@@ -86,8 +85,8 @@ if __name__ == '__main__':
 
     # load in songs
     data_raw = load_songs()
+
     # trim to only key and tempo for each song
-    #### I HAVE NOT ACTUALLY TESTED THIS, HOPEFULLY YOU GET WHAT I MEANT
     data_trimmed = extract_params(['key', 'tempo'], data_raw)
     data_genres = extract_params(['class'], data_raw)
 
@@ -112,6 +111,5 @@ if __name__ == '__main__':
     guessed_genres = [int_as_genre(int(genre)) for genre in guessed_genres]
     correct_genres = [int_as_genre(int(genre)) for genre in correct_genres]
 
-
+    # evaluate and graph
     vis.present_results(guessed_genres, correct_genres)
-    # save these two and return them for plotting/evaluation
