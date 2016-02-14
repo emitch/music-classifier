@@ -1,13 +1,14 @@
 
-Experimental:		Reference:
-| Blues		|	| Blues		|
-| Blues		|	| Blues		|
-| Classical	|	| Blues		|
-| Rock		|	| Blues		|
-| Blues		|	| Blues		|
-| ...		|	| ...		|
-| Blues		|	| Rock		|
-| Blues		|	| Rock		|
-| Classical	|	| Rock		|
-| Rock		|	| Rock		|
-| Blues		|	| Rock		|
+/.../exp.txt:       /.../ref.txt:
+Blues               Blues
+Blues               Blues
+Classical           Blues
+Rock                Blues
+Blues               Blues
+...                 ...
+Blues               Rock
+Blues               Rock
+Classical           Rock
+Rock                Rock
+Blues               Rock
+...                 ...
