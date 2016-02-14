@@ -66,7 +66,7 @@ def present_results(pred_path, ref_path):
 
     plt.ylabel('Number Correct')
     plt.title('Correct Predictions by Category')
-    plt.xticks(ind + width / 2., correct_x)
+    plt.xticks(ind + width / 2., correct_x, rotation='40')
     plt.yticks(np.arange(0, 100, 10))
     
     plt.show()
@@ -85,7 +85,7 @@ def present_results(pred_path, ref_path):
     plt.ylabel('# Incorrect Predictions')
     plt.xlabel('Actual Genre')
     plt.title('Incorrect Predictions by Actual Genre')
-    plt.xticks(ind + width / 2., categories)
+    plt.xticks(ind + width / 2., categories, rotation='40')
     plt.yticks(np.arange(0, 65, 10))
     plt.legend(plots, categories, ncol=4)
     
@@ -105,7 +105,7 @@ def present_results(pred_path, ref_path):
     plt.ylabel('# Incorrect Predictions')
     plt.xlabel('Predicted Genre')
     plt.title('Incorrect Predictions by Predicted Genre')
-    plt.xticks(ind + width / 2., categories)
+    plt.xticks(ind + width / 2., categories, rotation='40')
     plt.yticks(np.arange(0, 65, 10))
     plt.legend(plots, categories, ncol=4)
     
