@@ -2,9 +2,8 @@ import classify, vis, os, random, statistics
 import numpy as np
 import scipy.io as sio
 from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
 
-# global variables
-FRAMES_PER_SONG = 1198
 
 def test_model(data, model):
     genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
@@ -14,7 +13,7 @@ def test_model(data, model):
     predictions = model.predict(data)
 
     # convert to words
-    predictions = [genres[int(genre)-1] for genre in guessed_genres]
+    predictions = [genres[int(genre)-1] for genre in predictions]
 
     return predictions
 
@@ -27,7 +26,14 @@ def make_mask(n_total, n_mask):
 
     return mask
 
-def grab_param(data, param, summarize_flag=True, key_only=True):
+def int_as_genre(number):
+    # take an integer and return its string genre
+    genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
+        'jazz', 'metal', 'pop', 'reggae', 'rock']
+    
+    return genres[number-1]
+
+def grab_param(data, param, summarize_flag=True):
     # extract a given parameter name from the big array
 
     # since the vectors aren't all the same size, get min dimensions
@@ -40,23 +46,16 @@ def grab_param(data, param, summarize_flag=True, key_only=True):
         # grab each item and transpose to column vector
         grabbed = np.vstack(
             [data[i][param][0][0][0][0] for i in range(len(data))])
-    else:
+    elif n_rows == 12:
         grabbed = np.empty((len(data), 0))
         # use the size and loop through
         if summarize_flag:
-            # TODO: select only the row corresponding to the key of the song
-            for row in range(n_rows):
-                # get a matrix of features one row at a time
-                this_row = np.vstack([np.array([
-                    statistics.mean(data[i][param][0][0][row,0:n_cols]), 
-                    statistics.stdev(data[i][param][0][0][row,0:n_cols])])
-                    for i in range(n_songs)])
-
-                # summarize it and add to grabbed
-                grabbed = np.hstack([grabbed, this_row])
-        else:
-            # not written yet
-            raise
+            # select only the row corresponding to the key of the song
+            # get a matrix of features one row at a time
+            grabbed = np.vstack([np.array([
+                statistics.mean(data[i][param][0][0][data[i]['key'][0][0][0][0] - 1,0:n_cols]), 
+                statistics.stdev(data[i][param][0][0][data[i]['key'][0][0][0][0] - 1,0:n_cols])])
+                for i in range(n_songs)])
 
     return grabbed
 
@@ -71,35 +70,10 @@ def summarize(time_series):
 
     return stats
 
-def classify_1(data):
-    # extract strength of dominant key
-    key_strength = np.zeros((len(data), FRAMES_PER_SONG))
-    for i in range(len(data)):
-        key = data[i]['key'][0][0][0][0]
-        key_strength[i,:] = data[i]['keystrength'][0][0][key-1,:]
-
-    # extract only mean + std
-    key_strength = classify.summarize(key_strength)
-
-    # extract tempo
-    tempo = grab_param(data, 'tempo')
-    # combine arrays:
-    params = np.hstack((key_strength, tempo))
-    # get correct genre assignment
-    classes = grab_param(data, 'class')
-    # select random subsets for training + testing
-    mask = make_mask(params.shape[0], params.shape[0]//2)
-
-    # train
-    model = GaussianNB()
-    model.fit(params[mask,:], classes[mask])
-
-    # test
-    return [test_model(data[~mask,:], model), classes[~mask]]
-
-def classify_general(params_list, data, training_fraction=0.5,
+def general(params_list, data, training_fraction=0.5,
     classifier=GaussianNB):
-
+    # TODO: separate feature extraction and model training to optimize
+    
     # compile feature vectors
     params = np.hstack([grab_param(data, param) for param in params_list])
 
@@ -114,7 +88,10 @@ def classify_general(params_list, data, training_fraction=0.5,
     model.fit(params[mask,:], classes[mask])
 
     # test
-    return [test_model(params[~mask,:], model), classes[~mask]]
+    class_pred = test_model(params[~mask,:], model)
+    class_real = [int_as_genre(i) for i in classes[~mask]]
+
+    return [class_pred, class_real, model, mask]
 
 
 def load_songs(data_folder = '../data'):
@@ -138,4 +115,14 @@ if __name__ == '__main__':
     # load all
     data = load_songs()
 
-    # do some classifying
+    # Gaussian Naive Bayes on tempo and keystrength
+    p1, r1, gnb, m1 = general(['tempo', 'keystrength'], data)
+    vis.present_results(p1,r1)
+
+    # K-Nearest Neighbors on tempo and keystrength
+    p2, r2, knn, m2 = general(['tempo', 'keystrength'], data, 
+        classifier=KNeighborsClassifier)
+    vis.present_results(p2,r2)
+
+
+
