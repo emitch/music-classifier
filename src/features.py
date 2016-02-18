@@ -17,7 +17,8 @@ def similarity_by_measure(tempo, time_series):
 	t_measure = 60 * (beats_per_measure / tempo)
 
 	# divide into measure-long chunks
-
+	
+	
 	# TODO - finish that shit
 
 

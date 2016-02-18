@@ -3,6 +3,7 @@ import numpy as np
 import scipy.io as sio
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import SGDClassifier
 
 def test_model(data, model):
     genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
@@ -100,7 +101,7 @@ def general(params_list, data, training_fraction=0.5,
 
     # train
     model = classifier()
-    model.fit(params[mask,:], classes[mask])
+    model.fit(params[mask,:], np.ravel(classes[mask]))
 
     # test
     class_pred = test_model(params[~mask,:], model)
@@ -130,16 +131,20 @@ if __name__ == '__main__':
     # load all
     data = load_songs()
 
+    params_list = ['tempo', 'keystrength', 'eng', 'inharmonic', \
+        'zerocross']
     # Gaussian Naive Bayes on tempo, keystrength, energy, inharmonicity
-    p1, r1, gnb, m1 = general(
-        ['tempo', 'keystrength', 'eng', 'inharmonic'], data)
+    p1, r1, gnb, m1 = general(params_list, data)
     vis.present_results(p1,r1)
 
     # K-Nearest Neighbors on tempo and keystrength
-    p2, r2, knn, m2 = general(
-        ['tempo', 'keystrength', 'eng', 'inharmonic'], data, 
+    p2, r2, knn, m2 = general(params_list, data, 
         classifier=KNeighborsClassifier)
     vis.present_results(p2,r2)
+
+    p3, r3, sgd, m3 = general(params_list, data, 
+        classifier=SGDClassifier)
+    vis.present_results(p3,r3)
 
 
 
