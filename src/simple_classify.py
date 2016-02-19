@@ -60,8 +60,8 @@ def load_songs(data_folder = '../data'):
             if file.endswith('.mat'):
                 # load only data from files, using corresponding path
                 # add to list of song data
-
-                songs.append(sio.loadmat(path + '/' + file)['DAT'])
+                if random.randrange(10) == 0:
+                    songs.append(sio.loadmat(path + '/' + file)['DAT'])
 
     return songs
 
@@ -110,6 +110,8 @@ if __name__ == '__main__':
 
     guessed_genres = [int_as_genre(int(genre)) for genre in guessed_genres]
     correct_genres = [int_as_genre(int(genre)) for genre in correct_genres]
+
+    print(data_raw[0]['keystrength'][0][0])
 
     # evaluate and graph
     vis.present_results(guessed_genres, correct_genres)

@@ -19,20 +19,42 @@ def hist_of_points(values, feature_name, graph_title):
     plt.title(title)
     
     plt.show()
+    
+    """
+    Must implement *load_data()* and *get_feature()* for this function
+    """
+#def vis_feature(feature_name, categorization_feature):
+#    all_data = # load_data()
+#    feature_set = {}
+#    for struct in all_data:
+#        feature = get_feature(struct, feature_name)
+        # if get_feature(struct, feature_name)
 
-def present_results(pred_data, ref_data):
+def present_results(pred_data, ref_data, print_only=False):
     correct_counts = defaultdict(int)
     incorrect_counts = defaultdict(int)
     correct_percents = defaultdict(float)
+    
+    correct_total = 0
 
     # get the categories in the reference list
     for pred, ref in zip(pred_data, ref_data):  
         if pred == ref:
+            correct_total += 1
             correct_counts[ref] += 1
             incorrect_counts[ref] += 0
         else:
             correct_counts[ref] += 0
             incorrect_counts[ref] += 1
+            
+    print("******************")
+    print("******************")
+    print(float(correct_total / len(ref_data) * 100), "% correct")
+    print("******************")
+    print("******************")
+    
+    if print_only:
+        return
 
     for key in correct_counts:
         correct_percents[key] = correct_counts[key] / (correct_counts[key] + incorrect_counts[key])
