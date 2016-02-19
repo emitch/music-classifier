@@ -1,9 +1,12 @@
-import classify, vis, os, random
+import os, random
 import numpy as np
 import scipy.io as sio
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import SGDClassifier
+
 from song_glob import SongGlob
+import vis
 
 def test_model(data, model):
     genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
@@ -44,32 +47,40 @@ def general(feature_list, glob, classifier=GaussianNB):
     return [class_pred, class_real, model]
 
 if __name__ == '__main__':
-    # load all
+    # load all into a glob
     glob = SongGlob()
     glob.set_mask(train_fraction=.5)
     
+    params_list = ['tempo', 'keystrength', 'eng', 'inharmonic', 'zerocross']
+    
+    ##########################
     # change to true to run a loop to only see overall accuracy with different
     # training sizes
     RUN_LOOP = False
 
     if RUN_LOOP:
         train_fraction = .01
-        # Gaussian Naive Bayes on tempo, keystrength, energy, inharmonicity
+        
+        # Gaussian Naive Bayes for different training fractions, see how
+        # accuracy changes with training set size
         for i in range(100):
+            print("")
             print("fraction:", train_fraction)
-            p1, r1, gnb = general(
-                ['tempo', 'keystrength', 'eng', 'inharmonic'], glob)
+            
+            p, r, gnb = general(params_list, glob)
             vis.present_results(p1,r1,True)
+            
             glob.set_mask(train_fraction)
             train_fraction += .01
+    ##########################
         
     # Gaussian Naive Bayes on tempo, keystrength, energy, inharmonicity
-    p1, r1, gnb = general(
-        ['tempo', 'keystrength', 'eng', 'inharmonic'], glob)
-    vis.present_results(p1,r1,False)
+    p1, r1, gnb = general(params_list, glob)
+    vis.present_results(p1,r1)
 
     # K-Nearest Neighbors on tempo and keystrength
-    # p2, r2, knn = general(
-    #     ['tempo', 'keystrength', 'eng', 'inharmonic'], glob, 
-    #     classifier=KNeighborsClassifier)
-    # vis.present_results(p2,r2)
+    p2, r2, knn = general(params_list, glob, classifier=KNeighborsClassifier)
+    vis.present_results(p2,r2)
+    
+    p3, r3, sgd = general(params_list, glob, classifier=SGDClassifier)
+    vis.present_results(p3,r3)

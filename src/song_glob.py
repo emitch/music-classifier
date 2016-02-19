@@ -23,6 +23,7 @@ class SongGlob:
     def __init__(self):
         self.data = self.load_songs()
         
+    # set the mask any time you want to test on a new random portion of the glob
     def set_mask(self, train_fraction=.5):
         n_total = len(self.data)
         n_train = int(n_total * train_fraction)
@@ -35,6 +36,7 @@ class SongGlob:
         
         self.mask = m
         
+    # gets a matrix of the requested features
     def get_features(self, feature_list, mask_split):
         for feature in feature_list:
             train, test = self.get_feature(feature, mask_split)
@@ -47,6 +49,7 @@ class SongGlob:
         
         return (train_features, test_features)
 
+    # gets a list of only one specific feature
     def get_feature(self, feature_name, mask_split):
         # extract a given parameter name from the big array
         
