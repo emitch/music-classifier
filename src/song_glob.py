@@ -1,6 +1,7 @@
 import os, random
 import scipy.io as sio
 import numpy as np
+import matplotlib.pyplot as plt
 
 class SongGlob:
     def load_songs(self, data_folder='../data'):
@@ -50,7 +51,7 @@ class SongGlob:
         return (train_features, test_features)
 
     # gets a list of only one specific feature
-    def get_feature(self, feature_name, mask_split):
+    def get_feature(self, feature_name, mask_split=False):
         # extract a given parameter name from the big array
         
         # since the vectors aren't all the same size, get min dimensions
@@ -95,4 +96,45 @@ class SongGlob:
             return (grabbed[self.mask], grabbed[~self.mask])
         else:
             return grabbed
-        
+
+    def plot_feature(self, feature_name, plot_all=False):
+        n_classes = 10
+
+        colors = ['dimgray', 'red', 'brown', 'darkgray', 'yellow', 'palegreen', 
+            'seagreen', 'deepskyblue', 'navy', 'deeppink']
+        genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
+            'jazz', 'metal', 'pop', 'reggae', 'rock']
+
+        # get a matrix of the required features, along with class
+        feature_vector = self.get_feature(feature_name)
+        classes = self.get_feature('class')
+
+        if feature_vector.shape[1] != 2:
+            raise
+
+
+        # plot them by class
+        plt.figure(1)
+        plot_handles = []
+        for i in range(1,n_classes + 1):
+            # extract by class
+            subset = feature_vector[classes[:,0]==i,:]
+            if plot_all:
+                # plot all in a given class in the same color
+                plot_handles.append(
+                    plt.scatter(subset[:,0], subset[:,1], c = colors[i-1]))
+            else:
+                # plot the mean of each class and use std for error bars
+                plot_handles.append(
+                    plt.errorbar(np.nanmean(subset[:,0]), np.nanmean(subset[:,1]),
+                    xerr = np.nanstd(subset[:,0]), yerr = np.nanstd(subset[:,1]),
+                    mfc = colors[i-1], mec = colors[i-1], ecolor = colors[i-1],
+                    fmt = 'o'))
+
+        plt.title(feature_name + ' statistics by genre')
+        plt.xlabel('Mean of parameter')
+        plt.ylabel('Standard deviation of parameter')
+        plt.legend(plot_handles, [genres[j] for j in range(n_classes)])
+        plt.show()
+
+
