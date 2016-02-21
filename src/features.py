@@ -21,5 +21,4 @@ def similarity_by_measure(tempo, time_series):
 	
 	# TODO - finish that shit
 
-
-
+def plot_feature()
