@@ -1,4 +1,4 @@
-import os, random
+import os, random, sys
 import scipy.io as sio
 import numpy as np
 
@@ -8,6 +8,7 @@ class SongGlob:
 
         # initialize empty list
         songs = []
+        song_count = 0
         # walk through data folder, touching each subfolder
         for path, dirs, files in os.walk(data_folder):
             # loop through files in subfolder
@@ -17,7 +18,12 @@ class SongGlob:
                     # load only data from files, using corresponding path
                     # add to list of song data
                     songs.append(sio.loadmat(path + '/' + file)['DAT'])
+                    
+                    song_count += 1
+                    sys.stdout.write("\rLoaded %d / 1000 songs" % song_count)
 
+        print("")
+        
         return songs
 
     def __init__(self):

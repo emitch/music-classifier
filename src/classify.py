@@ -38,7 +38,7 @@ def general(feature_list, glob, classifier=GaussianNB):
 
     # train
     model = classifier()
-    model.fit(train_features, train_classes)
+    model.fit(train_features, train_classes.ravel())
 
     # test
     class_pred = test_model(test_features, model)
@@ -63,12 +63,10 @@ if __name__ == '__main__':
         
         # Gaussian Naive Bayes for different training fractions, see how
         # accuracy changes with training set size
-        for i in range(100):
-            print("")
-            print("fraction:", train_fraction)
-            
+        for i in range(99):
+            title = "Gaussian Naive Bayes ({} Training Size)".format(train_fraction)
             p, r, gnb = general(params_list, glob)
-            vis.present_results(p1,r1,True)
+            vis.present_results(p, r, title, True)
             
             glob.set_mask(train_fraction)
             train_fraction += .01
@@ -76,11 +74,11 @@ if __name__ == '__main__':
         
     # Gaussian Naive Bayes on tempo, keystrength, energy, inharmonicity
     p1, r1, gnb = general(params_list, glob)
-    vis.present_results(p1,r1)
+    vis.present_results(p1, r1, "Gaussian Naive Bayes")
 
     # K-Nearest Neighbors on tempo and keystrength
     p2, r2, knn = general(params_list, glob, classifier=KNeighborsClassifier)
-    vis.present_results(p2,r2)
+    vis.present_results(p2, r2, "Nearest Neighbors")
     
     p3, r3, sgd = general(params_list, glob, classifier=SGDClassifier)
-    vis.present_results(p3,r3)
+    vis.present_results(p3, r3, "Stochastic Gradient Descent")
