@@ -30,7 +30,7 @@ def hist_of_points(values, feature_name, graph_title):
 #        feature = get_feature(struct, feature_name)
         # if get_feature(struct, feature_name)
 
-def present_results(pred_data, ref_data, title, print_only=False):
+def present_results(pred_data, ref_data, title, print_results=False, show_results=False):
     correct_counts = defaultdict(int)
     incorrect_counts = defaultdict(int)
     correct_percents = defaultdict(float)
@@ -49,14 +49,15 @@ def present_results(pred_data, ref_data, title, print_only=False):
     
     percent_correct = (correct_total / len(ref_data)) * 100
     
-    print("\n*********************************")
-    print(title)
-    print("Overall accuracy: {:.2f} % correct".format(percent_correct))
-    print("*********************************")
+    if print_results:
+        print("\n*********************************")
+        print(title)
+        print("Overall accuracy: {:.2f} % correct".format(percent_correct))
+        print("*********************************")
     
-    if print_only:
+    if not show_results:
         return percent_correct
-
+    
     for key in correct_counts:
         correct_percents[key] = correct_counts[key] / (correct_counts[key] + incorrect_counts[key])
 
