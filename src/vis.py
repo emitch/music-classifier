@@ -46,14 +46,16 @@ def present_results(pred_data, ref_data, title, print_only=False):
         else:
             correct_counts[ref] += 0
             incorrect_counts[ref] += 1
-            
+    
+    percent_correct = (correct_total / len(ref_data)) * 100
+    
     print("\n*********************************")
     print(title)
-    print("Overall accuracy: {:.2f} % correct".format(correct_total / len(ref_data) * 100))
+    print("Overall accuracy: {:.2f} % correct".format(percent_correct))
     print("*********************************")
     
     if print_only:
-        return
+        return percent_correct
 
     for key in correct_counts:
         correct_percents[key] = correct_counts[key] / (correct_counts[key] + incorrect_counts[key])
@@ -142,6 +144,8 @@ def present_results(pred_data, ref_data, title, print_only=False):
     plt.legend(plots, categories, ncol=4)
     
     plt.show()
+    
+    return percent_correct
 
 if __name__ == '__main__':
     present_results(sys.argv[1], sys.argv[2])

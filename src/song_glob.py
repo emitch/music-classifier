@@ -43,22 +43,37 @@ class SongGlob:
         self.mask = m
         
     # gets a matrix of the requested features
-    def get_features(self, feature_list, mask_split):
+    def get_features(self, feature_list, mask_split, include_dominant=False):
         for feature in feature_list:
-            train, test = self.get_feature(feature, mask_split)
-            if 'train_features' not in locals():
-                train_features = train
-                test_features = test
-            else:
-                train_features = np.hstack((train_features, train))
-                test_features = np.hstack((test_features, test))
+            result = self.get_feature(feature, mask_split, False)
+            if len(result[0]) > 0:
+                if 'train_features' not in locals():
+                    train_features = result[0]
+                    if mask_split:
+                        test_features = result[1]
+                else:
+                    train_features = np.hstack((train_features, result[0]))
+                    if mask_split:
+                        test_features = np.hstack((test_features, result[1]))
+                    
+        if include_dominant:
+            for feature in feature_list:
+                result = self.get_feature(feature, mask_split, True)
+                
+                if len(result[0]) > 0:
+                    train_features = np.hstack((train_features, result[0]))
+                    if mask_split:
+                        test_features = np.hstack((test_features, result[1]))
         
-        return (train_features, test_features)
+        if mask_split:
+            return (train_features, test_features)
+        else:
+            return train_features
 
     # gets a list of only one specific feature
-    def get_feature(self, feature_name, mask_split):
+    def get_feature(self, feature_name, mask_split, dominant_key=False):
         # extract a given parameter name from the big array
-        
+        print(feature_name)
         # since the vectors aren't all the same size, get min dimensions
         n_songs = len(self.data)
         n_rows = self.data[0][feature_name][0][0].shape[0]
@@ -66,6 +81,9 @@ class SongGlob:
 
         # single element parameters are easy
         if n_cols == 1:
+            if dominant_key:
+                return [np.array([]), np.array([])]
+                
             # grab each item and transpose to column vector
             grabbed = np.vstack(
                 [self.data[i][feature_name][0][0][0][0] 
@@ -77,6 +95,12 @@ class SongGlob:
             for i in range(n_songs):
                 # get key, only use info in relevant key
                 key = self.data[i]['key'][0][0][0][0]
+                
+                if dominant_key:
+                    key = key + 7
+                    if key > 12:
+                        key = key - 12
+                
                 # mean and std
                 mean = np.nanmean(self.data[i][feature_name][0][0][key-1,:])
                 std = np.nanstd(self.data[i][feature_name][0][0][key-1,:])
@@ -88,6 +112,9 @@ class SongGlob:
             raise
 
         else:
+            if dominant_key:
+                return [np.array([]), np.array([])]
+                
             # simply summarize the row
             summaries = []
             for i in range(n_songs):
@@ -98,7 +125,7 @@ class SongGlob:
             grabbed = np.vstack(summaries)
         
         if mask_split:
-            return (grabbed[self.mask], grabbed[~self.mask])
+            return [grabbed[self.mask], grabbed[~self.mask]]
         else:
             return grabbed
         
