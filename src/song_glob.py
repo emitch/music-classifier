@@ -1,4 +1,4 @@
-import os, random
+import os, random, sys
 import scipy.io as sio
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,6 +9,7 @@ class SongGlob:
 
         # initialize empty list
         songs = []
+        song_count = 0
         # walk through data folder, touching each subfolder
         for path, dirs, files in os.walk(data_folder):
             # loop through files in subfolder
@@ -18,40 +19,39 @@ class SongGlob:
                     # load only data from files, using corresponding path
                     # add to list of song data
                     songs.append(sio.loadmat(path + '/' + file)['DAT'])
+                    
+                    song_count += 1
+                    sys.stdout.write("\rLoaded %d / 1000 songs" % song_count)
 
+        print("")
+        
         return songs
 
     def __init__(self):
         self.data = self.load_songs()
-        
-    # set the mask any time you want to test on a new random portion of the glob
-    def set_mask(self, train_fraction=.5):
-        n_total = len(self.data)
-        n_train = int(n_total * train_fraction)
-        
-        # select training set using boolean mask of a random subset
-        training_indices = random.sample(range(n_total), n_train)
-        
-        m = np.zeros(n_total, dtype=bool)
-        m[training_indices] = True
-        
-        self.mask = m
-        
+    
     # gets a matrix of the requested features
-    def get_features(self, feature_list, mask_split):
+    def get_features(self, feature_list, include_dominant=False):
         for feature in feature_list:
-            train, test = self.get_feature(feature, mask_split)
-            if 'train_features' not in locals():
-                train_features = train
-                test_features = test
-            else:
-                train_features = np.hstack((train_features, train))
-                test_features = np.hstack((test_features, test))
+            result = self.get_feature(feature)
+            
+            if len(result[0]) > 0:
+                if 'feature_matrix' not in locals():
+                    feature_matrix = result
+                else:
+                    feature_matrix = np.hstack((feature_matrix, result))
         
-        return (train_features, test_features)
+        if include_dominant:
+            for feature in feature_list:
+                result = self.get_feature(feature, True)
+                
+                if len(result[0]) > 0:
+                    feature_matrix = np.hstack((feature_matrix, result))
+        
+        return feature_matrix
 
     # gets a list of only one specific feature
-    def get_feature(self, feature_name, mask_split=False):
+    def get_feature(self, feature_name, dominant_key=False):
         # extract a given parameter name from the big array
         
         # since the vectors aren't all the same size, get min dimensions
@@ -61,6 +61,9 @@ class SongGlob:
 
         # single element parameters are easy
         if n_cols == 1:
+            if dominant_key:
+                return [np.array([]), np.array([])]
+                
             # grab each item and transpose to column vector
             grabbed = np.vstack(
                 [self.data[i][feature_name][0][0][0][0] 
@@ -72,9 +75,16 @@ class SongGlob:
             for i in range(n_songs):
                 # get key, only use info in relevant key
                 key = self.data[i]['key'][0][0][0][0]
+                
+                if dominant_key:
+                    key = key + 7
+                    if key > 12:
+                        key = key - 12
+                
                 # mean and std
                 mean = np.nanmean(self.data[i][feature_name][0][0][key-1,:])
                 std = np.nanstd(self.data[i][feature_name][0][0][key-1,:])
+                
                 # add to running list
                 summaries.append(np.array([mean, std]))
 
@@ -83,6 +93,9 @@ class SongGlob:
             raise
 
         else:
+            if dominant_key:
+                return [np.array([]), np.array([])]
+                
             # simply summarize the row
             summaries = []
             for i in range(n_songs):
@@ -91,11 +104,8 @@ class SongGlob:
                     np.nanstd(self.data[i][feature_name][0][0][0,:])]))
 
             grabbed = np.vstack(summaries)
-        
-        if mask_split:
-            return (grabbed[self.mask], grabbed[~self.mask])
-        else:
-            return grabbed
+
+        return grabbed
 
     def plot_feature(self, feature_name, plot_all=False):
         n_classes = 10
@@ -136,5 +146,3 @@ class SongGlob:
         plt.ylabel('Standard deviation of parameter')
         plt.legend(plot_handles, [genres[j] for j in range(n_classes)])
         plt.show()
-
-
