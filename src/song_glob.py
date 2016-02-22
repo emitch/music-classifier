@@ -35,7 +35,6 @@ class SongGlob:
         for feature in feature_list:
             result = self.get_feature(feature)
             
-            feature_matrix = np.empty([0,0])
             if len(result[0]) > 0:
                 if 'feature_matrix' not in locals():
                     feature_matrix = result
@@ -62,9 +61,6 @@ class SongGlob:
 
         # single element parameters are easy
         if n_cols == 1:
-            if dominant_key:
-                return [np.array([]), np.array([])]
-                
             # grab each item and transpose to column vector
             grabbed = np.vstack(
                 [self.data[i][feature_name][0][0][0][0] 
