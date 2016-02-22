@@ -22,7 +22,7 @@ class SongGlob:
                     songs.append(sio.loadmat(path + '/' + file)['DAT'])
                     
                     song_count += 1
-                    sys.stdout.write("\rLoaded %d / 1000 songs" % song_count)
+                    sys.stdout.write("\rLoaded %d songs" % song_count)
 
         print("")
         
@@ -36,7 +36,7 @@ class SongGlob:
         for feature in feature_list:
             result = self.get_feature(feature)
             
-            feature_matrix = np.empty([0,0])
+            #feature_matrix = np.empty([0,0])
             if len(result[0]) > 0:
                 if 'feature_matrix' not in locals():
                     feature_matrix = result

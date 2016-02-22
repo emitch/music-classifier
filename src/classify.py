@@ -4,6 +4,7 @@ import scipy.io as sio
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import SGDClassifier
+from sklearn.svm import SVC
 
 from song_glob import SongGlob
 import vis
@@ -48,22 +49,29 @@ def leave_one_out(feature_list, glob, classifier=GaussianNB, param=None):
         test_class = np.transpose(all_classes[i,:])
         
         model = None
-        if param == None:
-            model = classifier()
-        else:
+        if classifier == KNeighborsClassifier:
             model = classifier(param)
+        elif classifier == SVC:
+            model = classifier(kernel='sigmoid')
+        elif classifier == GaussianNB:
+            model = classifier()
+        elif classifier == SGDClassifier:
+            model = classifier()
+                
         model.fit(train_features, train_classes.ravel())
         
         class_pred.append(test_model(test_features, model)[0])
         class_real.append(int_as_genre(test_class))
+        
+        sys.stdout.write("\r%d / %d samples tested" % ((i + 1), len(all_features)))
     
     return [class_pred, class_real, model]
 
 if __name__ == '__main__':
-    all_features = ['eng', 'chroma', 'keystrength', 'brightness', 'zerocross', 'roughness', 'inharmonic', 'tempo', 'key']
-    
-    all_features = list(powerset(all_features))
-    random.shuffle(all_features)
+    # all_features = ['eng', 'chroma', 'keystrength', 'brightness', 'zerocross', 'roughness', 'inharmonic', 'tempo', 'key']
+    # 
+    # all_features = list(powerset(all_features))
+    # random.shuffle(all_features)
     
     # load all into a glob
     glob = SongGlob()
@@ -97,6 +105,7 @@ if __name__ == '__main__':
     params_gnb = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'key']
     params_knn = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo']
     params_sgd = ['tempo', 'keystrength', 'eng', 'inharmonic', 'zerocross', 'chroma']
+    params_svc = ['tempo', 'keystrength', 'eng', 'inharmonic', 'zerocross', 'chroma']
         
     # Gaussian Naive Bayes on tempo, keystrength, energy, inharmonicity
     p1, r1, gnb = leave_one_out(params_gnb, glob)
@@ -107,4 +116,7 @@ if __name__ == '__main__':
     vis.present_results(p2, r2, "Nearest Neighbors", print_results=True, show_results=False)
     
     p3, r3, sgd = leave_one_out(params_sgd, glob, classifier=SGDClassifier)
-    vis.present_results(p3, r3, "Stochastic Gradient Descent", print_results=False, show_results=False)
+    vis.present_results(p3, r3, "Stochastic Gradient Descent", print_results=True, show_results=False)
+    
+    p4, r4, svc = leave_one_out(params_svc, glob, classifier=SVC, param="linear")
+    vis.present_results(p3, r3, "Support Vector Machine", print_results=True, show_results=False)
