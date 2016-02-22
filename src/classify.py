@@ -56,7 +56,7 @@ def leave_one_out(feature_list, glob, classifier=GaussianNB):
     return [class_pred, class_real, model]
 
 if __name__ == '__main__':
-    all_features = ['eng', 'chroma', 't', 'keystrength', 'brightness', 'zerocross', 'roughness', 'inharmonic', 'tempo', 'key']
+    all_features = ['eng', 'chroma', 'keystrength', 'brightness', 'zerocross', 'roughness', 'inharmonic', 'tempo', 'key']
     all_features = list(powerset(all_features))
     random.shuffle(all_features)
     

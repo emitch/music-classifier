@@ -23,7 +23,7 @@ def similarity_by_measure(tempo, time_series):
 def wavelet(raw):
 	""" DO WAVELET SHIT """
 	# numbers of samples over which to compute wavelet
-	widths = np.arange(2, 1000) # freq of each w is (44100/w) Hz
+	widths = np.asarray() # freq of each w is (44100/w) Hz
 	# compute wavelet transform
 	wavelet_matrix = signal.cwt(raw, signal.ricker, widths)
 	# 
