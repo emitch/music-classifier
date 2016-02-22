@@ -35,6 +35,7 @@ class SongGlob:
         for feature in feature_list:
             result = self.get_feature(feature)
             
+            feature_matrix = np.empty([0,0])
             if len(result[0]) > 0:
                 if 'feature_matrix' not in locals():
                     feature_matrix = result
