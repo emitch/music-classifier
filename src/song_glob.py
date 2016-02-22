@@ -1,5 +1,6 @@
 import os, random, sys
 import scipy.io as sio
+import scipy.stats.stats as st
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -99,9 +100,10 @@ class SongGlob:
             # simply summarize the row
             summaries = []
             for i in range(n_songs):
-                summaries.append(np.array(
-                    [np.nanmean(self.data[i][feature_name][0][0][0,:]), 
-                    np.nanstd(self.data[i][feature_name][0][0][0,:])]))
+                mean = np.nanmean(self.data[i][feature_name][0][0][0,:])
+                std = np.nanstd(self.data[i][feature_name][0][0][0,:])
+                
+                summaries.append(np.array([mean, std]))
 
             grabbed = np.vstack(summaries)
 

@@ -34,8 +34,8 @@ def int_as_genre(number):
     
     return genres[number-1]
     
-def leave_one_out(feature_list, glob, classifier=GaussianNB):
-    all_features = glob.get_features(feature_list)
+def leave_one_out(feature_list, glob, classifier=GaussianNB, param=None):
+    all_features = glob.get_features(feature_list, True)
     all_classes = glob.get_feature('class')
     
     class_pred, class_real = [], []
@@ -47,7 +47,11 @@ def leave_one_out(feature_list, glob, classifier=GaussianNB):
         test_features = np.transpose(all_features[i,:]).reshape((1, train_features.shape[1]))
         test_class = np.transpose(all_classes[i,:])
         
-        model = classifier()
+        model = None
+        if param == None:
+            model = classifier()
+        else:
+            model = classifier(param)
         model.fit(train_features, train_classes.ravel())
         
         class_pred.append(test_model(test_features, model)[0])
@@ -56,49 +60,50 @@ def leave_one_out(feature_list, glob, classifier=GaussianNB):
     return [class_pred, class_real, model]
 
 if __name__ == '__main__':
-    all_features = ['eng', 'chroma', 't', 'keystrength', 'brightness', 'zerocross', 'roughness', 'inharmonic', 'tempo', 'key']
+    all_features = ['eng', 'chroma', 'keystrength', 'brightness', 'zerocross', 'inharmonic', 'tempo', 'key']
     all_features = list(powerset(all_features))
     random.shuffle(all_features)
     
     # load all into a glob
     glob = SongGlob()
     
-    idx = 0
-    results = {}
+    # idx = 0
+    # results = {}
+    # 
+    # start = time.clock()
+    # 
+    # for feature_set in all_features:
+    #     if len(feature_set) == 0:
+    #         continue
+    #     
+    #     p1, r1, gnb = leave_one_out(feature_set, glob)
+    #     acc = vis.present_results(p1, r1, "Gaussian Naive Bayes", print_results=False, show_results=False)
+    #     
+    #     results[feature_set] = acc
+    #     
+    #     idx += 1
+    #     
+    #     t = time.clock() - start
+    #     remaining = t * (len(all_features) / idx) - t
+    #     
+    #     sys.stdout.write("\r%d / %d permutations (%d:%02d left)" % (idx, len(all_features), remaining // 60, remaining % 60))
+    # 
+    # print("")
+    # 
+    # for set in sorted(results, key=results.get, reverse=True):
+    #     print(set, results[set])
     
-    start = time.clock()
-    
-    for feature_set in all_features:
-        if len(feature_set) == 0:
-            continue
-        
-        p1, r1, gnb = leave_one_out(feature_set, glob)
-        acc = vis.present_results(p1, r1, "Gaussian Naive Bayes", print_results=False, show_results=False)
-        
-        results[feature_set] = acc
-        
-        idx += 1
-        
-        t = time.clock() - start
-        
-        remaining = t * (len(all_features) / idx) - t
-        
-        sys.stdout.write("\r%d / %d permutations (%.2f minutes left)" % (idx, len(all_features), remaining / 60))
-    
-    for set in sorted(results, key=results.get, reverse=True):
-        print(set, results[set])
-    
-    params_gnb = ['tempo', 'keystrength', 'eng', 'inharmonic', 'zerocross', 'chroma']
-    params_knn = ['inharmonic']
+    params_gnb = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'key']
+    params_knn = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo']
     params_sgd = ['tempo', 'keystrength', 'eng', 'inharmonic', 'zerocross', 'chroma']
         
     # Gaussian Naive Bayes on tempo, keystrength, energy, inharmonicity
     p1, r1, gnb = leave_one_out(params_gnb, glob)
-    vis.present_results(p1, r1, "Gaussian Naive Bayes", print_results=False, show_results=False)
+    vis.present_results(p1, r1, "Gaussian Naive Bayes", print_results=True, show_results=False)
 
     # K-Nearest Neighbors on tempo and keystrength
-    p2, r2, knn = leave_one_out(params_knn, glob, classifier=KNeighborsClassifier)
-    vis.present_results(p2, r2, "Nearest Neighbors", print_results=False, show_results=False)
+    p2, r2, knn = leave_one_out(params_knn, glob, classifier=KNeighborsClassifier, param=15)
+    vis.present_results(p2, r2, "Nearest Neighbors", print_results=True, show_results=False)
     
     p3, r3, sgd = leave_one_out(params_sgd, glob, classifier=SGDClassifier)
     vis.present_results(p3, r3, "Stochastic Gradient Descent", print_results=False, show_results=False)
