@@ -98,28 +98,11 @@ def present_results(pred_data, ref_data, title, print_results=False, show_result
     correct_x = []
     correct_y = []
     
-    ref_dict = {}    # arranged by real category
-    pred_dict = {}   # arranged by predicted category
-    ref_cumul = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    pred_cumul = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
     for cat in categories:
-        ref_dict[cat] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        pred_dict[cat] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         correct_x.append(cat)
         correct_y.append(correct_percents[cat])
-
-    # get incorrect prediction data
-    for pred, ref in zip(pred_data, ref_data):
-        if pred != ref:
-            ref_idx = categories.index(ref)
-            pred_idx = categories.index(pred)
-            
-            ref_dict[ref][pred_idx] += 1
-            pred_dict[pred][ref_idx] += 1
     
     # now we need to display the data
-    
     # show the correct counts for each category
     
     N = 10

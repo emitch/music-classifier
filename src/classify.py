@@ -10,6 +10,8 @@ import vis
 from itertools import chain, combinations
 import sys
 import time
+import math
+from sklearn.decomposition import PCA
 
 genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
     'jazz', 'metal', 'pop', 'reggae', 'rock']
@@ -48,7 +50,8 @@ def gram(train_features, test_features):
 def kernel(x1, x2):
     similarity = 0
     for idx in range(len(x1)):
-        similarity -= abs(x1[idx] - x2[idx])
+        if x1[idx] != x2[idx]:
+            similarity -= abs(x1[idx] - x2[idx])
     
     return similarity
     
@@ -58,9 +61,11 @@ def kernel(x1, x2):
     
 # perform classification for a set of train features/classes, a single test
 # feature vector, and a particular classifier type
+# PCA example adapted from:
+# http://stackoverflow.com/questions/32194967/how-to-do-pca-and-svm-for-classification-in-python
 def classify(train_feature_matrix, train_classes, test_features, classifier):
     if classifier == KNeighborsClassifier:
-        model = classifier(15)
+        model = classifier(23, weights='distance', p=1)
         model.fit(train_feature_matrix, train_classes.ravel())
         prediction = model.predict(test_features)[0]
     elif classifier == SVC:
@@ -72,7 +77,7 @@ def classify(train_feature_matrix, train_classes, test_features, classifier):
         model.fit(train_feature_matrix, train_classes.ravel())
         prediction = model.predict(test_features)[0]
     elif classifier == SGDClassifier:
-        model = classifier()
+        model = classifier(loss='modified_huber', class_weight='balanced', penalty='l1')
         model.fit(train_feature_matrix, train_classes.ravel())
         prediction = model.predict(test_features)[0]
     
@@ -85,13 +90,16 @@ def leave_one_out(feature_list, glob, classifier, title):
     
     class_pred, class_real = [], []
     
-    start = time.clock()
-    
     vis.print_stars(newline=True)
     print("Testing " + title + " Classification with features:")
     print(feature_list)
     vis.print_dashes()
     sys.stdout.write("\r0 / %d samples processed (...)" % len(all_features))
+    
+    pca = PCA(n_components=15, whiten=True)
+    all_features = pca.fit_transform(all_features)
+    
+    start = time.clock()
     
     for idx in range(len(all_features)):
         train_features = np.delete(all_features, idx, 0)
@@ -148,10 +156,10 @@ if __name__ == '__main__':
     # for set in sorted(results, key=results.get, reverse=True):
     #     print(set, results[set])
     
-    params_gnb = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'key']
-    params_knn = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc']
-    params_sgd = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc']
-    params_svc = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc']
+    params_gnb = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'key', 'brightness', 'roughness']
+    params_knn = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'key', 'brightness', 'roughness']
+    params_sgd = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'key', 'brightness', 'roughness']
+    params_svc = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'key', 'brightness', 'roughness']
         
     # Gaussian Naive Bayes on tempo, keystrength, energy, inharmonicity
     p1, r1 = leave_one_out(params_gnb, glob, GaussianNB, "Gaussian Naive Bayes")
@@ -165,4 +173,4 @@ if __name__ == '__main__':
     vis.present_results(p3, r3, "Stochastic Gradient Descent", print_results=True, show_results=False)
     
     p4, r4 = leave_one_out(params_svc, glob, SVC, "Support Vector Machine")
-    vis.present_results(p3, r3, "Support Vector Machine", print_results=True, show_results=True)
+    vis.present_results(p4, r4, "Support Vector Machine", print_results=True, show_results=False)

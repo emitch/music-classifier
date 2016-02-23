@@ -11,19 +11,20 @@ class SongGlob:
         # initialize empty list
         songs = []
         song_count = 0
+        idx = 0
         # walk through data folder, touching each subfolder
         for path, dirs, files in os.walk(data_folder):
             # loop through files in subfolder
             for file in files:
                 # find .mat files
                 if file.endswith('.mat'):
+                    idx += 1
                     # load only data from files, using corresponding path
                     # add to list of song data
-                    if random.randrange(10) < 3: # to limit dataset size
-                        songs.append(sio.loadmat(path + '/' + file)['DAT'])
-                        
-                        song_count += 1
-                        sys.stdout.write("\rLoaded %d songs" % song_count)
+                    songs.append(sio.loadmat(path + '/' + file)['DAT'])
+                    
+                    song_count += 1
+                    sys.stdout.write("\rLoaded %d songs" % song_count)
 
         print("")
         
@@ -75,7 +76,7 @@ class SongGlob:
             for i in range(n_songs):
                 # get key, only use info in relevant key
                 key = self.data[i]['key'][0][0][0][0]
-                dominant_key = key + 4
+                dominant_key = key + 7
                 if dominant_key > 12:
                     dominant_key = dominant_key - 12
                 
@@ -89,7 +90,7 @@ class SongGlob:
                 dom_std = np.nanstd(self.data[i][feature_name][0][0][dominant_key-1,:])
                 
                 # add to running list
-                summaries.append(np.array([mean, std]))
+                summaries.append(np.array([mean, dom_mean, std, dom_std]))
 
             grabbed = np.vstack(summaries)
         else:
@@ -99,12 +100,8 @@ class SongGlob:
             # simply summarize the row
             summaries = []
             for i in range(n_songs):
-                key = self.data[i]['key'][0][0][0][0]
-                if n_rows == 1:
-                    key = 1
-                    
-                mean = np.nanmean(self.data[i][feature_name][0][0][key - 1,:])
-                std = np.nanstd(self.data[i][feature_name][0][0][key - 1,:])
+                mean = np.nanmean(self.data[i][feature_name][0][0][0,:])
+                std = np.nanstd(self.data[i][feature_name][0][0][0,:])
                 
                 summaries.append(np.array([mean, std]))
 
