@@ -93,6 +93,7 @@ class SongGlob:
                 summaries.append(np.array([mean, dom_mean, std, dom_std]))
 
             grabbed = np.vstack(summaries)
+
         else:
             if dominant_key:
                 return [np.array([]), np.array([])]
@@ -117,13 +118,24 @@ class SongGlob:
         genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
             'jazz', 'metal', 'pop', 'reggae', 'rock']
 
-        # get a matrix of the required features, along with class
-        feature_vector = self.get_feature(feature_name)
+        # get column vector of class assignments
         classes = self.get_feature('class')
+
+        # for basic features w/string name use get_feature
+        if isinstance(feature_name, str):
+            # get a matrix of the required features
+            feature_vector = self.get_feature(feature_name)
+        else:
+            # assume feature is a function on a single entry of glob.data
+            # returning a 1x2 numpy arrray
+            features = []
+            for i in range(len(self.data)):
+                features.append(feature_name(self.data[i]))
+
+            feature_vector = np.vstack(features)
 
         if feature_vector.shape[1] != 2:
             raise
-
 
         # plot them by class
         plt.figure(1)
@@ -143,7 +155,7 @@ class SongGlob:
                     mfc = colors[i-1], mec = colors[i-1], ecolor = colors[i-1],
                     fmt = 'o'))
 
-        plt.title(feature_name + ' statistics by genre')
+        plt.title('statistics by genre')
         plt.xlabel('Mean of parameter')
         plt.ylabel('Standard deviation of parameter')
         plt.legend(plot_handles, [genres[j] for j in range(n_classes)])

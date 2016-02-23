@@ -1,4 +1,4 @@
-import os, random
+import os, random, sys, time, vis
 import numpy as np
 import scipy.io as sio
 from sklearn.naive_bayes import GaussianNB
@@ -6,7 +6,6 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import SGDClassifier
 from sklearn.svm import SVC
 from song_glob import SongGlob
-import vis
 from itertools import chain, combinations
 import sys
 import time
