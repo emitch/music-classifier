@@ -1,16 +1,12 @@
-import os, random, sys, time, vis
+import os, random, sys, time, vis, math
 import numpy as np
-import scipy.io as sio
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import SGDClassifier
+from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 from song_glob import SongGlob
 from itertools import chain, combinations
-import sys
-import time
-import math
-from sklearn.decomposition import PCA
 
 genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
     'jazz', 'metal', 'pop', 'reggae', 'rock']

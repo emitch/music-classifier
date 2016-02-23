@@ -67,8 +67,9 @@ def separate_beats():
 	""" just like separate measures but do it for each beat instead """
 	return
 
+# never actually used this, but it was a nice thought
 def wavelet(raw):
-	""" DO WAVELET SHIT """
+	""" DO WAVELET """
 	# numbers of samples over which to compute wavelet
 	widths = np.logspace(1,12,num=10,base=2) # freq of each w is (44100/w) Hz
 	# compute wavelet transform

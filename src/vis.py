@@ -1,7 +1,5 @@
 from collections import defaultdict
-import random
-import sys
-import ast
+import random, sys, ast
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
