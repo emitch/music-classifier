@@ -19,7 +19,7 @@ class SongGlob:
                 # find .mat files
                 if file.endswith('.mat'):
                     idx += 1
-                    if idx % 10 < 10:
+                    if idx % 100 < 100:
                         # load only data from files, using corresponding path
                         # add to list of song data
                         songs.append(sio.loadmat(path + '/' + file)['DAT'])
@@ -36,7 +36,7 @@ class SongGlob:
         self.n = len(self.data)
     
     # gets a matrix of the requested features
-    def get_features(self, feature_list, include_dominant=False):
+    def get_features(self, feature_list):
         for feature in feature_list:
             result = self.get_feature(feature)
             
@@ -46,18 +46,10 @@ class SongGlob:
                 else:
                     feature_matrix = np.hstack((feature_matrix, result))
         
-        if include_dominant:
-            for feature in feature_list:
-                result = self.get_feature(feature, True)
-                
-                if len(result[0]) > 0:
-                    feature_matrix = np.hstack((feature_matrix, result))
-        
         return feature_matrix
 
     # gets a list of only one specific feature
-    def get_feature(self, feature_name, dominant_key=False, 
-            get_mean=True, get_std=True, get_measure=True):
+    def get_feature(self, feature_name, get_mean=True, get_std=True, get_measure=True):
         # extract a given parameter name from the big array
         
         # since the vectors aren't all the same size, get min dimensions
@@ -83,17 +75,15 @@ class SongGlob:
                 if dominant_key > 12:
                     dominant_key = dominant_key - 12
                 
-                # if dominant_key:
-                #     key = dominant_key
-                
                 # mean and std
                 mean = np.nanmean(self.data[i][feature_name][0][0][key-1,:])
                 std = np.nanstd(self.data[i][feature_name][0][0][key-1,:])
                 dom_mean = np.nanmean(self.data[i][feature_name][0][0][dominant_key-1,:])
                 dom_std = np.nanstd(self.data[i][feature_name][0][0][dominant_key-1,:])
+                meas = features.feat_by_measure(self.data[i], feature_name)
                 
                 # add to running list
-                summaries.append(np.array([mean, std, dom_mean, dom_std]))
+                summaries.append(np.array([meas]))
 
             grabbed = np.vstack(summaries)
 

@@ -90,7 +90,7 @@ def classify(train_feature_matrix, train_classes, test_features, classifier):
     
 # perform a 'leave one out' test on a particular classifier type using our data set
 def leave_one_out(feature_list, glob, classifier, title):
-    all_features = glob.get_features(feature_list, True)
+    all_features = glob.get_features(feature_list)
     all_classes = glob.get_feature('class')
     
     class_pred, class_real = [], []
@@ -103,8 +103,6 @@ def leave_one_out(feature_list, glob, classifier, title):
     
     pca = PCA(whiten=True)
     all_features = pca.fit_transform(all_features)
-    all_features = np.delete(all_features, 16, 1)
-    all_features = np.delete(all_features, 22, 1)
     
     start = time.clock()
     
@@ -174,16 +172,16 @@ if __name__ == '__main__':
     params = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'brightness', 'roughness', 'inharmonic']
     
     p1, r1 = leave_one_out(params, glob, KNeighborsClassifier, "K Nearest Neighbors")
-    vis.present_results(p1, r1, "K Nearest Neighbors", print_results=True, show_results=True)
+    vis.present_results(p1, r1, "K Nearest Neighbors", print_results=True, show_results=False)
     
     p2, r2 = leave_one_out(params, glob, GaussianNB, "Gaussian Naive Bayes")
-    vis.present_results(p2, r2, "Gaussian Naive Bayes", print_results=True, show_results=True)
+    vis.present_results(p2, r2, "Gaussian Naive Bayes", print_results=True, show_results=False)
 
     p3, r3 = leave_one_out(params, glob, SGDClassifier, "Stochastic Gradient Descent")
-    vis.present_results(p3, r3, "Stochastic Gradient Descent", print_results=True, show_results=True)
+    vis.present_results(p3, r3, "Stochastic Gradient Descent", print_results=True, show_results=False)
     
     p4, r4 = leave_one_out(params, glob, RandomForestClassifier, "Random Forest")
-    vis.present_results(p4, r4, "Random Forest", print_results=True, show_results=True)
+    vis.present_results(p4, r4, "Random Forest", print_results=True, show_results=False)
     
     p5, r5 = leave_one_out(params, glob, SVC, "Support Vector Machine")
-    vis.present_results(p5, r5, "Support Vector Machine", print_results=True, show_results=True)
+    vis.present_results(p5, r5, "Support Vector Machine", print_results=True, show_results=False)
