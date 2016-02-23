@@ -19,10 +19,11 @@ class SongGlob:
                 if file.endswith('.mat'):
                     # load only data from files, using corresponding path
                     # add to list of song data
-                    songs.append(sio.loadmat(path + '/' + file)['DAT'])
-                    
-                    song_count += 1
-                    sys.stdout.write("\rLoaded %d / 1000 songs" % song_count)
+                    if random.randrange(10) < 3: # to limit dataset size
+                        songs.append(sio.loadmat(path + '/' + file)['DAT'])
+                        
+                        song_count += 1
+                        sys.stdout.write("\rLoaded %d songs" % song_count)
 
         print("")
         
@@ -30,6 +31,7 @@ class SongGlob:
 
     def __init__(self):
         self.data = self.load_songs()
+        self.n = len(self.data)
     
     # gets a matrix of the requested features
     def get_features(self, feature_list, include_dominant=False):
@@ -73,15 +75,18 @@ class SongGlob:
             for i in range(n_songs):
                 # get key, only use info in relevant key
                 key = self.data[i]['key'][0][0][0][0]
+                dominant_key = key + 4
+                if dominant_key > 12:
+                    dominant_key = dominant_key - 12
                 
-                if dominant_key:
-                    key = key + 7
-                    if key > 12:
-                        key = key - 12
+                # if dominant_key:
+                #     key = dominant_key
                 
                 # mean and std
                 mean = np.nanmean(self.data[i][feature_name][0][0][key-1,:])
                 std = np.nanstd(self.data[i][feature_name][0][0][key-1,:])
+                dom_mean = np.nanmean(self.data[i][feature_name][0][0][dominant_key-1,:])
+                dom_std = np.nanstd(self.data[i][feature_name][0][0][dominant_key-1,:])
                 
                 # add to running list
                 summaries.append(np.array([mean, std]))
@@ -91,12 +96,16 @@ class SongGlob:
         else:
             if dominant_key:
                 return [np.array([]), np.array([])]
-                
+            
             # simply summarize the row
             summaries = []
             for i in range(n_songs):
-                mean = np.nanmean(self.data[i][feature_name][0][0][0,:])
-                std = np.nanstd(self.data[i][feature_name][0][0][0,:])
+                key = self.data[i]['key'][0][0][0][0]
+                if n_rows == 1:
+                    key = 1
+                    
+                mean = np.nanmean(self.data[i][feature_name][0][0][key - 1,:])
+                std = np.nanstd(self.data[i][feature_name][0][0][key - 1,:])
                 
                 summaries.append(np.array([mean, std]))
 
