@@ -87,9 +87,7 @@ class SongGlob:
                 summaries.append(np.array([mean, std]))
 
             grabbed = np.vstack(summaries)
-        elif n_rows == 24:
-            raise
-
+            
         else:
             if dominant_key:
                 return [np.array([]), np.array([])]
