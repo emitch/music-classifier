@@ -44,8 +44,7 @@ def compare_measures(measures, squeeze = False):
 
 	# if squeeze, then squeeze the whole thing down to one scalar
 	if squeeze:
-		score *= score
-		return score[0]
+		return np.sum(score * score)
 
 	# return a vector of scores, one for each row of the input
 	return score

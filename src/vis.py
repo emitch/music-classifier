@@ -3,6 +3,7 @@ import random, sys, ast
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
+from scipy.interpolate import UnivariateSpline
 
 num_plots = 0
 categories = ['blues', 'classical', 'country', 'disco', 'hiphop', \
@@ -171,6 +172,13 @@ def present_results(pred_data, ref_data, title, print_results=False, show_result
     # plt.show()
     # 
     # return percent_correct
+
+def plot_fv(fv, color=):
+    """ plot a feature vector in 2D space as simply a curve with feature
+    on the x-axis and value on the y-axis """
+    plt.
+
+    return handle
 
 if __name__ == '__main__':
     present_results(sys.argv[1], sys.argv[2])
