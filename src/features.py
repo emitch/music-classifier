@@ -44,8 +44,7 @@ def compare_measures(measures, squeeze = False):
 
 	# if squeeze, then squeeze the whole thing down to one scalar
 	if squeeze:
-		score *= score
-		return score[0]
+		return np.sum(score * score)
 
 	# return a vector of scores, one for each row of the input
 	return score
@@ -67,8 +66,9 @@ def separate_beats():
 	""" just like separate measures but do it for each beat instead """
 	return
 
+# never actually used this, but it was a nice thought
 def wavelet(raw):
-	""" DO WAVELET SHIT """
+	""" DO WAVELET """
 	# numbers of samples over which to compute wavelet
 	widths = np.logspace(1,12,num=10,base=2) # freq of each w is (44100/w) Hz
 	# compute wavelet transform

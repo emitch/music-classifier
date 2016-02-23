@@ -1,6 +1,5 @@
 import os, random, sys, features
 import scipy.io as sio
-import scipy.stats.stats as st
 import numpy as np
 import matplotlib.pyplot as plt
 
