@@ -46,6 +46,19 @@ def compare_measures(measures):
 	# return a vector of scores, one for each row of the input
 	return score
 
+def raw_feature(song, feature):
+	feature = song[feature][0][0]
+	if feature.shape == (1,1):
+		return feature[0][0]
+	else:
+		return feature
+
+def feat_by_measure(song, feature):
+	separated = separate_measures(raw_feature(song, 'tempo'), 
+		raw_feature(song, feature))
+	score = compare_measures(separated)
+	return score
+
 def separate_beats():
 	""" just like separate measures but do it for each beat instead """
 	return
