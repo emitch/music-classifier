@@ -35,9 +35,9 @@ class SongGlob:
         self.n = len(self.data)
     
     # gets a matrix of the requested features
-    def get_features(self, feature_list):
-        for feature in feature_list:
-            result = self.get_feature(feature)
+    def get_features(self, feature_dict):
+        for feature in feature_dict:
+            result = self.get_feature(feature, *feature_dict[feature])
             
             if len(result[0]) > 0:
                 if 'feature_matrix' not in locals():
@@ -68,6 +68,7 @@ class SongGlob:
             # get a matrix of features one row at a time
             summaries = []
             for i in range(n_songs):
+                fv = []
                 # get key, only use info in relevant key
                 key = self.data[i]['key'][0][0][0][0]
                 dominant_key = key + 7
@@ -75,14 +76,17 @@ class SongGlob:
                     dominant_key = dominant_key - 12
                 
                 # mean and std
-                mean = np.nanmean(self.data[i][feature_name][0][0][key-1,:])
-                std = np.nanstd(self.data[i][feature_name][0][0][key-1,:])
-                dom_mean = np.nanmean(self.data[i][feature_name][0][0][dominant_key-1,:])
-                dom_std = np.nanstd(self.data[i][feature_name][0][0][dominant_key-1,:])
-                meas = features.feat_by_measure(self.data[i], feature_name)
+                if get_mean:
+                    fv.append(np.nanmean(self.data[i][feature_name][0][0][key-1,:]))
+                    fv.append(np.nanmean(self.data[i][feature_name][0][0][dominant_key-1,:]))
+                if get_std:
+                    fv.append(np.nanstd(self.data[i][feature_name][0][0][key-1,:]))
+                    fv.append(np.nanstd(self.data[i][feature_name][0][0][dominant_key-1,:]))
+                if get_measure:
+                    fv.append(features.feat_by_measure(self.data[i], feature_name))
                 
                 # add to running list
-                summaries.append(np.array([meas]))
+                summaries.append(np.array(fv))
 
             grabbed = np.vstack(summaries)
 

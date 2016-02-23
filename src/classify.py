@@ -2,14 +2,13 @@ import os, random, sys, time, copy
 import numpy as np
 import scipy.io as sio
 from itertools import chain, combinations
-
+# sklearn
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import SGDClassifier
 from sklearn.svm import SVC, LinearSVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import PCA
-
 # our own stuff
 from song_glob import SongGlob
 import vis
@@ -89,15 +88,17 @@ def classify(train_feature_matrix, train_classes, test_features, classifier):
     return genre_from_int(prediction)
     
 # perform a 'leave one out' test on a particular classifier type using our data set
-def leave_one_out(feature_list, glob, classifier, title):
-    all_features = glob.get_features(feature_list)
+def leave_one_out(feature_dict, glob, classifier, title):
+    # feature_dict is a dictionary of feature names and a triple of booleans defining
+    # which summary metrics to include respectively: (mean, std, measurewise)
+    all_features = glob.get_features(feature_dict)
     all_classes = glob.get_feature('class')
     
     class_pred, class_real = [], []
     
     vis.print_stars(newline=True)
     print("Testing " + title + " Classification with features:")
-    print(feature_list)
+    print(list(feature_dict.keys()))
     vis.print_dashes()
     sys.stdout.write("\r0 / %d samples processed (...)" % len(all_features))
     
@@ -127,61 +128,85 @@ def leave_one_out(feature_list, glob, classifier, title):
     
     return [class_pred, class_real]
 
+def optimize(classifier):
+    print("THIS IS BROKEN, NOT YET COMPATIBLE WITH FEATURE DICT")
+    raise
+
+    # full feature set
+    all_features = ['eng', 'chroma', 'keystrength', 'brightness', 'zerocross', 
+        'mfc', 'roughness', 'inharmonic', 'tempo', 'key']
+    
+    # get the power set of all_features
+    all_features = list(powerset(all_features))
+    random.shuffle(all_features)
+
+    # initialize
+    idx = 0
+    results = {}
+    max_acc = 0
+    max_feat = []
+    start = time.clock()
+    
+    # loop through each possible feature set
+    for feature_set in all_features:
+        if len(feature_set) == 0:
+            continue
+        
+        p1, r1, = leave_one_out(
+            feature_set, glob, classifier, classifier.__name__)
+        acc = vis.present_results(
+            p1, r1, classifier.__name__, print_results=False, show_results=True)
+
+        # print the running best combination
+        if acc > max_acc:
+            max_acc = acc
+            max_feat = feature_set
+            print()
+            print(max_acc, max_feat)
+            
+        results[feature_set] = acc
+        
+        idx += 1
+        
+        t = time.clock() - start
+        remaining = t * (len(all_features) / idx) - t
+        
+        sys.stdout.write("\r%d / %d permutations (%d:%02d left)" % (idx, len(all_features), remaining // 60, remaining % 60))
+    
+    print("")
+    
+    return sorted(results, key=results.get, reverse=True)
+
 if __name__ == '__main__':
     # load all songs into a glob
     glob = SongGlob()
-
-    # all_features = ['eng', 'chroma', 'keystrength', 'brightness', 'zerocross', 'mfc', 'roughness', 'inharmonic', 'tempo', 'key']
-    # 
-    # all_features = list(powerset(all_features))
-    # random.shuffle(all_features)
-    # 
-    # idx = 0
-    # results = {}
-    # max_acc = 0
-    # max_feat = []
-    # start = time.clock()
-    # 
-    # for feature_set in all_features:
-    #     if len(feature_set) == 0:
-    #         continue
-    #     
-    #     p1, r1, = leave_one_out(feature_set, glob, KNeighborsClassifier, "KNN")
-    #     acc = vis.present_results(p1, r1, "KNN", print_results=False, show_results=True)
-    #     if acc > max_acc:
-    #         max_acc = acc
-    #         max_feat = feature_set
-    #         print()
-    #         print(max_acc, max_feat)
-    #         
-    #     results[feature_set] = acc
-    #     
-    #     idx += 1
-    #     
-    #     t = time.clock() - start
-    #     remaining = t * (len(all_features) / idx) - t
-    #     
-    #     sys.stdout.write("\r%d / %d permutations (%d:%02d left)" % (idx, len(all_features), remaining // 60, remaining % 60))
-    # 
-    # print("")
-    # 
-    # for set in sorted(results, key=results.get, reverse=True):
-    #     print(set, results[set])
-    # 
     
+    # all params availible
     params = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'brightness', 'roughness', 'inharmonic']
-    
-    p1, r1 = leave_one_out(params, glob, KNeighborsClassifier, "K Nearest Neighbors")
+
+    param_dict = dict()
+    for param in params:
+        if param in ['inharmonic']:
+            param_dict[param] = (True, True, False)
+        elif param in ['chroma', 'keystrength']:
+            param_dict[param] = (True, False, True)
+        else:
+            param_dict[param] = (True, True, True)
+
+
+    p1, r1 = leave_one_out(param_dict, glob, KNeighborsClassifier, "K Nearest Neighbors")
     vis.present_results(p1, r1, "K Nearest Neighbors", print_results=True, show_results=False)
     
-    p2, r2 = leave_one_out(params, glob, GaussianNB, "Gaussian Naive Bayes")
+    p2, r2 = leave_one_out(param_dict, glob, GaussianNB, "Gaussian Naive Bayes")
     vis.present_results(p2, r2, "Gaussian Naive Bayes", print_results=True, show_results=False)
 
-    p3, r3 = leave_one_out(params, glob, SGDClassifier, "Stochastic Gradient Descent")
+    p3, r3 = leave_one_out(param_dict, glob, SGDClassifier, "Stochastic Gradient Descent")
     vis.present_results(p3, r3, "Stochastic Gradient Descent", print_results=True, show_results=False)
     
-    p4, r4 = leave_one_out(params, glob, RandomForestClassifier, "Random Forest")
+    p4, r4 = leave_one_out(param_dict, glob, RandomForestClassifier, "Random Forest")
     vis.present_results(p4, r4, "Random Forest", print_results=True, show_results=False)
-    
-    p5, r5 = leave_one_out(params, glob, SVC, "Support Vector Machine")
+
+    """
+    p5, r5 = leave_one_out(param_dict, glob, SVC, "Support Vector Machine")
     vis.present_results(p5, r5, "Support Vector Machine", print_results=True, show_results=False)
+    """
