@@ -1,4 +1,4 @@
-import os, random, sys
+import os, random, sys, features
 import scipy.io as sio
 import scipy.stats.stats as st
 import numpy as np
@@ -56,7 +56,8 @@ class SongGlob:
         return feature_matrix
 
     # gets a list of only one specific feature
-    def get_feature(self, feature_name, dominant_key=False):
+    def get_feature(self, feature_name, dominant_key=False, 
+            get_mean=True, get_std=True, get_measure=True):
         # extract a given parameter name from the big array
         
         # since the vectors aren't all the same size, get min dimensions
@@ -70,6 +71,7 @@ class SongGlob:
             grabbed = np.vstack(
                 [self.data[i][feature_name][0][0][0][0] 
                 for i in range(len(self.data))])
+
         elif n_rows == 12:
             # select only the row corresponding to the key of the song
             # get a matrix of features one row at a time
@@ -96,16 +98,18 @@ class SongGlob:
             grabbed = np.vstack(summaries)
 
         else:
-            if dominant_key:
-                return [np.array([]), np.array([])]
-            
-            # simply summarize the row
+            # simply summarize the first (perhaps only) row 
             summaries = []
             for i in range(n_songs):
-                mean = np.nanmean(self.data[i][feature_name][0][0][0,:])
-                std = np.nanstd(self.data[i][feature_name][0][0][0,:])
-                
-                summaries.append(np.array([mean, std]))
+                fv = []
+                if get_mean:
+                    fv.append(np.nanmean(self.data[i][feature_name][0][0][0,:]))
+                if get_std:
+                    fv.append(np.nanstd(self.data[i][feature_name][0][0][0,:]))
+                if get_measure:
+                    fv.append(features.feat_by_measure(self.data[i], feature_name))
+
+                summaries.append(np.array(fv))
 
             grabbed = np.vstack(summaries)
 
@@ -116,8 +120,8 @@ class SongGlob:
 
         colors = ['dimgray', 'red', 'brown', 'darkgray', 'yellow', 'palegreen', 
             'seagreen', 'deepskyblue', 'navy', 'deeppink']
-        genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
-            'jazz', 'metal', 'pop', 'reggae', 'rock']
+        genres = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 
+            'metal', 'pop', 'reggae', 'rock']
 
         # get column vector of class assignments
         classes = self.get_feature('class')
@@ -156,8 +160,8 @@ class SongGlob:
                     mfc = colors[i-1], mec = colors[i-1], ecolor = colors[i-1],
                     fmt = 'o'))
 
-        plt.title('statistics by genre')
-        plt.xlabel('Mean of parameter')
-        plt.ylabel('Standard deviation of parameter')
+        plt.title('2D Feature space by genre')
+        plt.xlabel('Parameter 1')
+        plt.ylabel('Parameter 2')
         plt.legend(plot_handles, [genres[j] for j in range(n_classes)])
         plt.show()

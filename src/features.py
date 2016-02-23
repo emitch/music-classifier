@@ -33,15 +33,19 @@ def separate_measures(tempo, time_series):
 
 	return measures
 
-def compare_measures(measures):
+def compare_measures(measures, squeeze = False):
 	""" take a 3D numpy array of features organized by measure and return
 	the mean of the variance of each measure-normalized frame """
 	# compute variance along the 3rd dimension, which is measure number
 	variance = np.nanvar(measures, 2)
 	# normalize by the mean of the same feature
-	fano = variance / np.nanmean(measures, 2)
 	# compute the mean of these scores along the second dimension
-	score = np.nanmean(fano, 1)
+	score = np.nanmean(variance, 1)
+
+	# if squeeze, then squeeze the whole thing down to one scalar
+	if squeeze:
+		score *= score
+		return score[0]
 
 	# return a vector of scores, one for each row of the input
 	return score
@@ -56,7 +60,7 @@ def raw_feature(song, feature):
 def feat_by_measure(song, feature):
 	separated = separate_measures(raw_feature(song, 'tempo'), 
 		raw_feature(song, feature))
-	score = compare_measures(separated)
+	score = compare_measures(separated, True)
 	return score
 
 def separate_beats():
