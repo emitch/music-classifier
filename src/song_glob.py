@@ -19,12 +19,13 @@ class SongGlob:
                 # find .mat files
                 if file.endswith('.mat'):
                     idx += 1
-                    # load only data from files, using corresponding path
-                    # add to list of song data
-                    songs.append(sio.loadmat(path + '/' + file)['DAT'])
-                    
-                    song_count += 1
-                    sys.stdout.write("\rLoaded %d songs" % song_count)
+                    if idx % 10 < 10:
+                        # load only data from files, using corresponding path
+                        # add to list of song data
+                        songs.append(sio.loadmat(path + '/' + file)['DAT'])
+                        
+                        song_count += 1
+                        sys.stdout.write("\rLoaded %d songs" % song_count)
 
         print("")
         
@@ -90,7 +91,7 @@ class SongGlob:
                 dom_std = np.nanstd(self.data[i][feature_name][0][0][dominant_key-1,:])
                 
                 # add to running list
-                summaries.append(np.array([mean, dom_mean, std, dom_std]))
+                summaries.append(np.array([mean, std, dom_mean, dom_std]))
 
             grabbed = np.vstack(summaries)
 

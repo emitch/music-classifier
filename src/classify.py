@@ -1,16 +1,18 @@
-import os, random, sys, time, vis
+import os, random, sys, time, copy
 import numpy as np
 import scipy.io as sio
+from itertools import chain, combinations
+
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import SGDClassifier
-from sklearn.svm import SVC
-from song_glob import SongGlob
-from itertools import chain, combinations
-import sys
-import time
-import math
+from sklearn.svm import SVC, LinearSVC
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import PCA
+
+# our own stuff
+from song_glob import SongGlob
+import vis
 
 genres = ['blues', 'classical', 'country', 'disco', 'hiphop', \
     'jazz', 'metal', 'pop', 'reggae', 'rock']
@@ -79,7 +81,11 @@ def classify(train_feature_matrix, train_classes, test_features, classifier):
         model = classifier(loss='modified_huber', class_weight='balanced', penalty='l1')
         model.fit(train_feature_matrix, train_classes.ravel())
         prediction = model.predict(test_features)[0]
-    
+    elif classifier == RandomForestClassifier:
+        model = classifier()
+        model.fit(train_feature_matrix, train_classes.ravel())
+        prediction = model.predict(test_features)[0]
+        
     return genre_from_int(prediction)
     
 # perform a 'leave one out' test on a particular classifier type using our data set
@@ -95,8 +101,10 @@ def leave_one_out(feature_list, glob, classifier, title):
     vis.print_dashes()
     sys.stdout.write("\r0 / %d samples processed (...)" % len(all_features))
     
-    pca = PCA(n_components=15, whiten=True)
+    pca = PCA(whiten=True)
     all_features = pca.fit_transform(all_features)
+    all_features = np.delete(all_features, 16, 1)
+    all_features = np.delete(all_features, 22, 1)
     
     start = time.clock()
     
@@ -111,9 +119,10 @@ def leave_one_out(feature_list, glob, classifier, title):
         
         class_pred.append(predicted_class)
         class_real.append(genre_from_int(test_class))
-        
+    
         t = time.clock() - start
-        remaining = t * (len(all_features) / (idx + 1)) - t + .5
+        time_per_iteration = t / (idx + 1)
+        remaining = time_per_iteration * (len(all_features) - (idx + 1))
         
         sys.stdout.write("\r%d / %d samples processed (%02d:%02d:%02d left)" % 
             ((idx + 1), len(all_features), remaining / 3600, (remaining / 60) % 60, remaining % 60))
@@ -124,23 +133,29 @@ if __name__ == '__main__':
     # load all songs into a glob
     glob = SongGlob()
 
-    # all_features = ['eng', 'chroma', 'keystrength', 'brightness', 'zerocross', 'roughness', 'inharmonic', 'tempo', 'key']
+    # all_features = ['eng', 'chroma', 'keystrength', 'brightness', 'zerocross', 'mfc', 'roughness', 'inharmonic', 'tempo', 'key']
     # 
     # all_features = list(powerset(all_features))
     # random.shuffle(all_features)
-    
+    # 
     # idx = 0
     # results = {}
-    # 
+    # max_acc = 0
+    # max_feat = []
     # start = time.clock()
     # 
     # for feature_set in all_features:
     #     if len(feature_set) == 0:
     #         continue
     #     
-    #     p1, r1, gnb = leave_one_out(feature_set, glob)
-    #     acc = vis.present_results(p1, r1, "Gaussian Naive Bayes", print_results=False, show_results=False)
-    #     
+    #     p1, r1, = leave_one_out(feature_set, glob, KNeighborsClassifier, "KNN")
+    #     acc = vis.present_results(p1, r1, "KNN", print_results=False, show_results=True)
+    #     if acc > max_acc:
+    #         max_acc = acc
+    #         max_feat = feature_set
+    #         print()
+    #         print(max_acc, max_feat)
+    #         
     #     results[feature_set] = acc
     #     
     #     idx += 1
@@ -154,22 +169,21 @@ if __name__ == '__main__':
     # 
     # for set in sorted(results, key=results.get, reverse=True):
     #     print(set, results[set])
+    # 
     
-    params_gnb = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'key', 'brightness', 'roughness']
-    params_knn = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'key', 'brightness', 'roughness']
-    params_sgd = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'key', 'brightness', 'roughness']
-    params_svc = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'key', 'brightness', 'roughness']
-        
-    # Gaussian Naive Bayes on tempo, keystrength, energy, inharmonicity
-    p1, r1 = leave_one_out(params_gnb, glob, GaussianNB, "Gaussian Naive Bayes")
-    vis.present_results(p1, r1, "Gaussian Naive Bayes", print_results=True, show_results=False)
+    params = ['eng', 'chroma', 'keystrength', 'zerocross', 'tempo', 'mfc', 'brightness', 'roughness', 'inharmonic']
+    
+    p1, r1 = leave_one_out(params, glob, KNeighborsClassifier, "K Nearest Neighbors")
+    vis.present_results(p1, r1, "K Nearest Neighbors", print_results=True, show_results=True)
+    
+    p2, r2 = leave_one_out(params, glob, GaussianNB, "Gaussian Naive Bayes")
+    vis.present_results(p2, r2, "Gaussian Naive Bayes", print_results=True, show_results=True)
 
-    # K-Nearest Neighbors on tempo and keystrength
-    p2, r2 = leave_one_out(params_knn, glob, KNeighborsClassifier, "K Nearest Neighbors")
-    vis.present_results(p2, r2, "K Nearest Neighbors", print_results=True, show_results=False)
+    p3, r3 = leave_one_out(params, glob, SGDClassifier, "Stochastic Gradient Descent")
+    vis.present_results(p3, r3, "Stochastic Gradient Descent", print_results=True, show_results=True)
     
-    p3, r3 = leave_one_out(params_sgd, glob, SGDClassifier, "Stochastic Gradient Descent")
-    vis.present_results(p3, r3, "Stochastic Gradient Descent", print_results=True, show_results=False)
+    p4, r4 = leave_one_out(params, glob, RandomForestClassifier, "Random Forest")
+    vis.present_results(p4, r4, "Random Forest", print_results=True, show_results=True)
     
-    p4, r4 = leave_one_out(params_svc, glob, SVC, "Support Vector Machine")
-    vis.present_results(p4, r4, "Support Vector Machine", print_results=True, show_results=False)
+    p5, r5 = leave_one_out(params, glob, SVC, "Support Vector Machine")
+    vis.present_results(p5, r5, "Support Vector Machine", print_results=True, show_results=True)

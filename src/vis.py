@@ -116,7 +116,7 @@ def present_results(pred_data, ref_data, title, print_results=False, show_result
     plt.figure(num_plots)
     p_correct = plt.bar(ind, correct_y, width, color='.75', edgecolor='k')
 
-    plt.ylabel('%% Correct')
+    plt.ylabel('% Correct')
     plt.title(title)
     plt.xticks(ind + width / 2., correct_x, rotation='40')
     plt.yticks(np.arange(0, 1.05, .1))
