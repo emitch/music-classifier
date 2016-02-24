@@ -2,6 +2,9 @@ import os, random, sys, time, copy
 import numpy as np
 import scipy.io as sio
 from itertools import chain, combinations
+import scipy
+import math
+
 # sklearn
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
@@ -9,6 +12,10 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.svm import SVC, LinearSVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import PCA
+from sklearn.ensemble import VotingClassifier, AdaBoostClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.tree import DecisionTreeClassifier
+
 # our own stuff
 from song_glob import SongGlob
 import vis
@@ -39,7 +46,7 @@ def gram(train_features, test_features):
     
     for i in range(gram.shape[0]):
         for j in range(gram.shape[1]):
-            gram[i, j] = kernel(test_features[i], train_features[j])
+            gram[i, j] = fast_cos_kernel(test_features[i], train_features[j])
     
     return gram
 
@@ -55,6 +62,22 @@ def kernel(x1, x2):
     
     return similarity
     
+# fast cosine kernel from 
+# http://stackoverflow.com/questions/18424228/cosine-similarity-between-2-number-lists
+def fast_cos_kernel(v1,v2):
+    "compute cosine similarity of v1 to v2: (v1 dot v2)/{||v1||*||v2||)"
+    sumxx, sumxy, sumyy = 0, 0, 0
+    for i in range(len(v1)):
+        x = v1[i]; y = v2[i]
+        sumxx += x*x
+        sumyy += y*y
+        sumxy += x*y
+    return sumxy/math.sqrt(sumxx*sumyy)
+    
+# compute the cosine of the feature vectors
+def cos_kernel(x1, x2):
+    return -scipy.spatial.distance.cosine(x1, x2)
+    
 ################
 # SUPPORT VECTOR MACHINE FUNCTIONS
 ##################################
@@ -64,27 +87,53 @@ def kernel(x1, x2):
 # PCA example adapted from:
 # http://stackoverflow.com/questions/32194967/how-to-do-pca-and-svm-for-classification-in-python
 def classify(train_feature_matrix, train_classes, test_features, classifier):
-    if classifier == KNeighborsClassifier:
-        model = classifier(23, weights='distance', p=1)
+    if classifier == 1:
+        model = KNeighborsClassifier(23, weights='distance', p=1)
         model.fit(train_feature_matrix, train_classes.ravel())
         prediction = model.predict(test_features)[0]
-    elif classifier == SVC:
-        model = classifier(kernel='precomputed')
+    elif classifier == 2:
+        model = VotingClassifier(estimators=[
+            ('knn1', KNeighborsClassifier(10, weights='distance', p=1)),
+            ('knn3', KNeighborsClassifier(30, weights='distance', p=1)),
+            ('knn4', KNeighborsClassifier(50, weights='distance', p=1)),
+            ('knn4', KNeighborsClassifier(70, weights='distance', p=1)),
+            ('knn5', KNeighborsClassifier(90, weights='distance', p=1))],
+            voting='soft')
+        model.fit(train_feature_matrix, train_classes.ravel())
+        prediction = model.predict(test_features)[0]
+    elif classifier == 3:
+        model = GaussianNB()
+        model.fit(train_feature_matrix, train_classes.ravel())
+        prediction = model.predict(test_features)[0]
+    elif classifier == 4:
+        model = SGDClassifier(loss='modified_huber', class_weight='balanced', penalty='l1')
+        model.fit(train_feature_matrix, train_classes.ravel())
+        prediction = model.predict(test_features)[0]
+    elif classifier == 5:
+        model = RandomForestClassifier()
+        model.fit(train_feature_matrix, train_classes.ravel())
+        prediction = model.predict(test_features)[0]
+    elif classifier == 6:
+        model = DecisionTreeClassifier()
+        model.fit(train_feature_matrix, train_classes.ravel())
+        prediction = model.predict(test_features)[0]
+    elif classifier == 7:
+        model = KNeighborsClassifier()
+        model.fit(train_feature_matrix, train_classes.ravel())
+        prediction = model.predict(test_features)[0]
+    elif classifier == 8:
+        model = SGDClassifier()
+        model.fit(train_feature_matrix, train_classes.ravel())
+        prediction = model.predict(test_features)[0]
+    elif classifier == 9:
+        model = AdaBoostClassifier(n_estimators=100)
+        model.fit(train_feature_matrix, train_classes.ravel())
+        prediction = model.predict(test_features)[0]
+    elif classifier == 10:
+        model = SVC(kernel='precomputed')
         model.fit(gram(train_feature_matrix, train_feature_matrix), train_classes.ravel())
         prediction = model.predict(gram(train_feature_matrix, test_features))[0]
-    elif classifier == GaussianNB:
-        model = classifier()
-        model.fit(train_feature_matrix, train_classes.ravel())
-        prediction = model.predict(test_features)[0]
-    elif classifier == SGDClassifier:
-        model = classifier(loss='modified_huber', class_weight='balanced', penalty='l1')
-        model.fit(train_feature_matrix, train_classes.ravel())
-        prediction = model.predict(test_features)[0]
-    elif classifier == RandomForestClassifier:
-        model = classifier()
-        model.fit(train_feature_matrix, train_classes.ravel())
-        prediction = model.predict(test_features)[0]
-        
+    
     return genre_from_int(prediction)
     
 # perform a 'leave one out' test on a particular classifier type using our data set
@@ -92,19 +141,18 @@ def leave_one_out(feature_dict, glob, classifier, title):
     # feature_dict is a dictionary of feature names and a triple of booleans defining
     # which summary metrics to include respectively: (mean, std, measurewise)
     all_features = glob.get_features(feature_dict)
-    all_classes = glob.get_feature('class')
+    all_classes = glob.get_feature('class', (True, True, True))
     
     class_pred, class_real = [], []
     
     vis.print_stars(newline=True)
-    print("Testing " + title + " Classification with features:")
+    print("Testing " + title + " classification with features:")
     print(list(feature_dict.keys()))
     vis.print_dashes()
     sys.stdout.write("\r0 / %d samples processed (...)" % len(all_features))
     
-    pca = PCA(whiten=True)
-    all_features = pca.fit_transform(all_features)
-    
+    pca = LinearDiscriminantAnalysis()
+    all_features = pca.fit_transform(all_features, all_classes.ravel())
     start = time.clock()
     
     for idx in range(len(all_features)):
@@ -128,10 +176,7 @@ def leave_one_out(feature_dict, glob, classifier, title):
     
     return [class_pred, class_real]
 
-def optimize(classifier):
-    print("THIS IS BROKEN, NOT YET COMPATIBLE WITH FEATURE DICT")
-    raise
-
+def optimize(classifier, feature_dict):
     # full feature set
     all_features = ['eng', 'chroma', 'keystrength', 'brightness', 'zerocross', 
         'mfc', 'roughness', 'inharmonic', 'tempo', 'key']
@@ -151,11 +196,9 @@ def optimize(classifier):
     for feature_set in all_features:
         if len(feature_set) == 0:
             continue
-        
-        p1, r1, = leave_one_out(
-            feature_set, glob, classifier, classifier.__name__)
-        acc = vis.present_results(
-            p1, r1, classifier.__name__, print_results=False, show_results=True)
+
+        p1, r1, = leave_one_out(feature_dict, glob, classifier, classifier.__name__)
+        acc = vis.present_results(p1, r1, classifier.__name__, print_results=False, show_results=True)
 
         # print the running best combination
         if acc > max_acc:
@@ -192,21 +235,53 @@ if __name__ == '__main__':
             param_dict[param] = (True, False, True)
         else:
             param_dict[param] = (True, True, True)
-
-
-    p1, r1 = leave_one_out(param_dict, glob, KNeighborsClassifier, "K Nearest Neighbors")
-    vis.present_results(p1, r1, "K Nearest Neighbors", print_results=True, show_results=False)
     
-    p2, r2 = leave_one_out(param_dict, glob, GaussianNB, "Gaussian Naive Bayes")
-    vis.present_results(p2, r2, "Gaussian Naive Bayes", print_results=True, show_results=False)
-
-    p3, r3 = leave_one_out(param_dict, glob, SGDClassifier, "Stochastic Gradient Descent")
-    vis.present_results(p3, r3, "Stochastic Gradient Descent", print_results=True, show_results=False)
+    start = time.clock()
+    p, r = leave_one_out(param_dict, glob, 1, "K Neighbors (Opt)")
+    t = time.clock() - start
+    vis.present_results(p, r, "K Neighbors (Opt)", t, print_results=True, show_results=True)
     
-    p4, r4 = leave_one_out(param_dict, glob, RandomForestClassifier, "Random Forest")
-    vis.present_results(p4, r4, "Random Forest", print_results=True, show_results=False)
+    start = time.clock()
+    p, r = leave_one_out(param_dict, glob, 2, "Voting")
+    t = time.clock() - start
+    vis.present_results(p, r, "Voting", t, print_results=True, show_results=True)
+    
+    start = time.clock()
+    p, r = leave_one_out(param_dict, glob, 3, GaussianNB.__name__)
+    t = time.clock() - start
+    vis.present_results(p, r, GaussianNB.__name__, t, print_results=True, show_results=True)
+    
+    start = time.clock()
+    p, r = leave_one_out(param_dict, glob, 4, "Stochastic Gradient Descent (Opt)")
+    t = time.clock() - start
+    vis.present_results(p, r, "Stochastic Gradient Descent (Opt)", t, print_results=True, show_results=True)
+    
+    start = time.clock()
+    p, r = leave_one_out(param_dict, glob, 5, RandomForestClassifier.__name__)
+    t = time.clock() - start
+    vis.present_results(p, r, RandomForestClassifier.__name__, t, print_results=True, show_results=True)
 
-    """
-    p5, r5 = leave_one_out(param_dict, glob, SVC, "Support Vector Machine")
-    vis.present_results(p5, r5, "Support Vector Machine", print_results=True, show_results=False)
-    """
+    start = time.clock()
+    p, r = leave_one_out(param_dict, glob, 6, "Decision Tree")
+    t = time.clock() - start
+    vis.present_results(p, r, "Decision Tree", t, print_results=True, show_results=True)
+
+    start = time.clock()
+    p, r = leave_one_out(param_dict, glob, 7, "K Neighbors (Def)")
+    t = time.clock() - start
+    vis.present_results(p, r, "K Neighbors (Def)", t, print_results=True, show_results=True)
+
+    start = time.clock()
+    p, r = leave_one_out(param_dict, glob, 8, "Stochastic Gradient Descent (Def)")
+    t = time.clock() - start
+    vis.present_results(p, r, "Stochastic Gradient Descent (Def)", t, print_results=True, show_results=True)
+
+    start = time.clock()
+    p, r = leave_one_out(param_dict, glob, 9, "Ada Boost (n=100)")
+    t = time.clock() - start
+    vis.present_results(p, r, "Ada Boost (n=100)", t, print_results=True, show_results=True)
+
+    start = time.clock()
+    p, r = leave_one_out(param_dict, glob, 10, "Support Vector Machine")
+    t = time.clock() - start
+    vis.present_results(p, r, "Support Vector Machine", t, print_results=True, show_results=True)

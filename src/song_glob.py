@@ -17,7 +17,6 @@ class SongGlob:
             for file in files:
                 # find .mat files
                 if file.endswith('.mat'):
-                    idx += 1
                     if idx % 100 < 100:
                         # load only data from files, using corresponding path
                         # add to list of song data
@@ -25,6 +24,8 @@ class SongGlob:
                         
                         song_count += 1
                         sys.stdout.write("\rLoaded %d songs" % song_count)
+                        
+                    idx += 1
 
         print("")
         
@@ -37,7 +38,7 @@ class SongGlob:
     # gets a matrix of the requested features
     def get_features(self, feature_dict):
         for feature in feature_dict:
-            result = self.get_feature(feature, *feature_dict[feature])
+            result = self.get_feature(feature, feature_dict[feature])
             
             if len(result[0]) > 0:
                 if 'feature_matrix' not in locals():
@@ -48,7 +49,11 @@ class SongGlob:
         return feature_matrix
 
     # gets a list of only one specific feature
-    def get_feature(self, feature_name, get_mean=True, get_std=True, get_measure=True):
+    def get_feature(self, feature_name, feature_tup):
+        get_mean = feature_tup[0]
+        get_std = feature_tup[1]
+        get_measure = feature_tup[2]
+        
         # extract a given parameter name from the big array
         
         # since the vectors aren't all the same size, get min dimensions

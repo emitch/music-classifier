@@ -1,0 +1,242 @@
+Introduction
+
+Guessing the genre of a song from an excerpt is not a simple task.  Human beings with years of music listening experience often disagree about which label ought to be ascribed to a given song.  With this context, the task of teaching a machine to do the same with only a limited number of songs for training seems significantly more challenging than it may at first.  The question we are left to answer, before deciding on a learning model, is what defines the genre of a song?  We took a combination of approaches to answer this question, using musical intuition to identify potentially relevant features as well as meaningful ways to compare them among different songs.
+
+Related Work
+The task of classifying music has been well explored; the company Shazam relies entirely on its app’s ability to perform extensive analysis and precise classification on a short sample of music, or even a whistled tune. Shazam performs identification, not genre classification, of a sample; it attempts to match a song to a specific known reference, as opposed to determining the identity of a completely unknown sample. However, it addresses the same core issue that we face here of assessing the similarity of multiple pieces of audio, using a fingerprinting approach [1]. And, according to some independent testing [2], it is remarkably accurate (and efficient!).
+
+A paper published at Princeton [3] used a variety of metrics. First, they used a 9-dimensional feature vector [mean-Centroid,
+mean-Rolloff, mean-Flux, mean-ZeroCrossings, std-Centroid,
+std-Rolloff, std-Flux, std-ZeroCrossings, LowEnergy] to represent the “characteristics of music related to texture, timbre, and instrumentation.” For rhythm representation, they used a Wavelet Transform, an STFT alternative, to build an additional feature vector of 8 dimensions [Period0: Periodicity in bpm of the first peak, Amplitude0: Relative amplitude (divided by sum of amplitudes) of the first peak, RatioPeriod1: Ratio of periodicity of second peak to the
+periodicity of the first peak, Amplitude1: Relative amplitude of second peak, RatioPeriod2, Amplitude2, RatioPeriod3, Amplitude3]. They combined the two feature vectors to create a single 17 dimensional feature vector, used as input to a Gaussian classifier (other techniques were used for non-music audio). Some of the techniques and features (Gaussian classifier, zero crossing, energy) selected closely parallel those in our analysis; some are quite different (FFT autocorrelation, separate feature vector sections for audio surface and rhythm). This paper used a 90/10 train/test ratio for testing, in a data set of 600 songs evenly spread across 6 categories; their overall accuracy was ~62.1%, which our best classifier beats slightly.
+
+Methods
+-Feature Selection
+Available features included:
+Energy [1 x 1198 double]
+MFC [32 x 1198 double]
+Chroma [12 x 1198 double]
+Key Strength [12 x 1198 double]
+Brightness [1 x 1198 double]
+Zerocross [1 x 1198 double]
+Roughness [1 x 1198 double]
+Inharmonic [1 x 1198 double]
+Key [integer]
+Tempo [scalar]
+and our feature selection process determined that all of these types of data except for key were had discriminatory properties. Our feature selection process consisted of computing the power set of the available features and running classification on every possible combination of features. The best several sets were examined, and we ultimately used all of these features except key (though key was used indirectly) in building our feature vectors.
+
+-Feature Vectors
+We built 27-dimensional feature vectors using the above features. For the scalar tempo, we simply used the value of the tempo as an element in the vector. For key strength, we computed the mean and standard deviation of the tonic (the key of the song) as well as the dominant (seven half steps above the key) as well as a custom measure repetition metric. For the other list types, we computed a flattened mean and standard deviation of the data, as well as the customized measure repetition (scalar) metric. We omitted the measure metric for the inharmonic due to lacking data and the standard deviation of chroma and key strength because it was not discriminatory.
+
+-Measure Repetition Metric
+<Rob>
+
+- Dimensionality Reduction
+27-dimensional feature vectors were a bit unwieldy, so we reduced their dimension to 9 using a Linear Discriminant Analysis, which performed better than a simple PCA by creating a more discriminatory basis.
+
+-Models
+The models used were:
+-K Nearest Neighbors (optimized to use the 23 nearest neighbors [roughly sqrt(N/2)], weight by distance, and use a power parameter p = 1)
+-Voting Classification (using 5 K Nearest Neighbor classifiers like in the first model, but with K values of 10, 30, 50, 70, and 90, and a soft voting policy [using the sum of the probability for each category]
+-Gaussian Naive Bayes
+-
+
+Results
+We used overall accuracy, category-wise accuracy, a confusion matrix, and the execution time to gauge the effectiveness of each model.
+Discussion and Conclusion
+
+[1] https://www.ee.columbia.edu/~dpwe/papers/Wang03-shazam.pdf
+[2] http://auditorydumpling.com/shazam/
+[3] http://ismir2001.ismir.net/pdf/tzanetakis.pdf
+
+Data:
+Loaded 1000 songs
+
+****************
+Testing K Neighbors (Opt) classification with features:
+['mfc', 'keystrength', 'inharmonic', 'roughness', 'eng', 'tempo', 'zerocross', 'brightness', 'chroma']
+--------
+1000 / 1000 samples processed (00:00:00 left)
+--------
+K Neighbors (Opt):
+Overall accuracy: 64.20 % correct
+classical : 85.0
+hiphop : 70.0
+rock : 23.0
+metal : 84.0
+blues : 60.0
+disco : 55.00000000000001
+reggae : 59.0
+pop : 68.0
+country : 64.0
+jazz : 74.0
+Time: 5.18 secs
+****************
+
+****************
+Testing Voting classification with features:
+['mfc', 'keystrength', 'inharmonic', 'roughness', 'eng', 'tempo', 'zerocross', 'brightness', 'chroma']
+--------
+1000 / 1000 samples processed (00:00:00 left)
+--------
+Voting:
+Overall accuracy: 65.30 % correct
+classical : 84.0
+hiphop : 67.0
+rock : 21.0
+metal : 84.0
+blues : 65.0
+disco : 57.99999999999999
+reggae : 62.0
+pop : 70.0
+country : 68.0
+jazz : 74.0
+Time: 10.88 secs
+****************
+
+****************
+Testing GaussianNB classification with features:
+['mfc', 'keystrength', 'inharmonic', 'roughness', 'eng', 'tempo', 'zerocross', 'brightness', 'chroma']
+--------
+1000 / 1000 samples processed (00:00:00 left)
+--------
+GaussianNB:
+Overall accuracy: 60.20 % correct
+classical : 84.0
+hiphop : 60.0
+rock : 24.0
+metal : 76.0
+blues : 51.0
+disco : 57.99999999999999
+reggae : 51.0
+pop : 66.0
+country : 56.99999999999999
+jazz : 75.0
+Time: 5.34 secs
+****************
+
+****************
+Testing Stochastic Gradient Descent (Opt) classification with features:
+['mfc', 'keystrength', 'inharmonic', 'roughness', 'eng', 'tempo', 'zerocross', 'brightness', 'chroma']
+--------
+1000 / 1000 samples processed (00:00:00 left)
+--------
+Stochastic Gradient Descent (Opt):
+Overall accuracy: 52.10 % correct
+classical : 86.0
+hiphop : 54.0
+rock : 24.0
+metal : 73.0
+blues : 35.0
+disco : 33.0
+reggae : 50.0
+pop : 56.99999999999999
+country : 41.0
+jazz : 68.0
+Time: 8.57 secs
+****************
+
+****************
+Testing RandomForestClassifier classification with features:
+['mfc', 'keystrength', 'inharmonic', 'roughness', 'eng', 'tempo', 'zerocross', 'brightness', 'chroma']
+--------
+1000 / 1000 samples processed (00:00:00 left)
+--------
+RandomForestClassifier:
+Overall accuracy: 60.00 % correct
+classical : 88.0
+hiphop : 66.0
+rock : 25.0
+metal : 80.0
+blues : 67.0
+disco : 44.0
+reggae : 46.0
+pop : 67.0
+country : 52.0
+jazz : 65.0
+Time: 27.93 secs
+****************
+
+****************
+Testing Decision Tree classification with features:
+['mfc', 'keystrength', 'inharmonic', 'roughness', 'eng', 'tempo', 'zerocross', 'brightness', 'chroma']
+--------
+1000 / 1000 samples processed (00:00:00 left)
+--------
+Decision Tree:
+Overall accuracy: 52.10 % correct
+classical : 83.0
+hiphop : 52.0
+rock : 32.0
+metal : 73.0
+blues : 44.0
+disco : 33.0
+reggae : 37.0
+pop : 62.0
+country : 41.0
+jazz : 64.0
+Time: 11.61 secs
+****************
+
+****************
+Testing K Neighbors (Def) classification with features:
+['mfc', 'keystrength', 'inharmonic', 'roughness', 'eng', 'tempo', 'zerocross', 'brightness', 'chroma']
+--------
+1000 / 1000 samples processed (00:00:00 left)
+--------
+K Neighbors (Def):
+Overall accuracy: 62.60 % correct
+classical : 86.0
+hiphop : 65.0
+rock : 27.0
+metal : 78.0
+blues : 73.0
+disco : 55.00000000000001
+reggae : 43.0
+pop : 69.0
+country : 61.0
+jazz : 69.0
+Time: 5.08 secs
+****************
+
+****************
+Testing Stochastic Gradient Descent (Def) classification with features:
+['mfc', 'keystrength', 'inharmonic', 'roughness', 'eng', 'tempo', 'zerocross', 'brightness', 'chroma']
+--------
+1000 / 1000 samples processed (00:00:00 left)
+--------
+Stochastic Gradient Descent (Def):
+Overall accuracy: 53.70 % correct
+classical : 85.0
+hiphop : 56.99999999999999
+rock : 28.000000000000004
+metal : 77.0
+blues : 49.0
+disco : 37.0
+reggae : 39.0
+pop : 62.0
+country : 37.0
+jazz : 66.0
+Time: 6.91 secs
+****************
+
+****************
+Testing Ada Boost (n=100) classification with features:
+['mfc', 'keystrength', 'inharmonic', 'roughness', 'eng', 'tempo', 'zerocross', 'brightness', 'chroma']
+--------
+1000 / 1000 samples processed (00:00:00 left)
+--------
+Ada Boost (n=100):
+Overall accuracy: 32.10 % correct
+classical : 81.0
+hiphop : 0.0
+rock : 1.0
+metal : 74.0
+blues : 0.0
+disco : 27.0
+reggae : 0.0
+pop : 82.0
+country : 10.0
+jazz : 46.0
+Time: 187.18 secs
+****************

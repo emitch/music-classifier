@@ -58,7 +58,7 @@ def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
 
-def present_results(pred_data, ref_data, title, print_results=False, show_results=False):
+def present_results(pred_data, ref_data, title, t, print_results=False, show_results=False):
     correct_counts = defaultdict(int)
     incorrect_counts = defaultdict(int)
     correct_percents = defaultdict(float)
@@ -77,18 +77,21 @@ def present_results(pred_data, ref_data, title, print_results=False, show_result
     
     percent_correct = (correct_total / len(ref_data)) * 100
     
+    for key in correct_counts:
+        correct_percents[key] = 100 * (correct_counts[key] / (correct_counts[key] + incorrect_counts[key]))
+
     if print_results:
         print_dashes(newline=True)
         print(title + ":")
         print("Overall accuracy: {:.2f} % correct".format(percent_correct))
+        for cat in correct_percents.keys():
+            print(cat, ":", correct_percents[cat])
+        print("Time: {:.2f} secs".format(t))
         print_stars()
     
     if not show_results:
         return percent_correct
     
-    for key in correct_counts:
-        correct_percents[key] = correct_counts[key] / (correct_counts[key] + incorrect_counts[key])
-
     # reference list of the categories we've seen
     categories = list(correct_counts.keys())
     categories.sort()
@@ -118,7 +121,8 @@ def present_results(pred_data, ref_data, title, print_results=False, show_result
     plt.ylabel('% Correct')
     plt.title(title)
     plt.xticks(ind + width / 2., correct_x, rotation='40')
-    plt.yticks(np.arange(0, 1.05, .1))
+    plt.yticks(np.arange(0, 101, 10))
+    plt.gcf().subplots_adjust(bottom=0.15)
     
     for idx in range(len(pred_data)):
         pred_data[idx] = genre_as_int(pred_data[idx])
@@ -129,8 +133,12 @@ def present_results(pred_data, ref_data, title, print_results=False, show_result
     # in each class)
     cm = confusion_matrix(ref_data, pred_data)
     cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    plt.figure()
+    
+
+    num_plots += 1
+    plt.figure(num_plots)
     plot_confusion_matrix(cm_normalized, title=title)
+    plt.gcf().subplots_adjust(bottom=0.15)
 
     plt.show()
     
