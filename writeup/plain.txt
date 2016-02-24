@@ -36,18 +36,34 @@ We built 27-dimensional feature vectors using the above features. For the scalar
 
 -Models
 The models used were:
--K Nearest Neighbors (optimized to use the 23 nearest neighbors [roughly sqrt(N/2)], weight by distance, and use a power parameter p = 1)
--Voting Classification (using 5 K Nearest Neighbor classifiers like in the first model, but with K values of 10, 30, 50, 70, and 90, and a soft voting policy [using the sum of the probability for each category]
+-K Nearest Neighbors (optimized to use the 23 nearest neighbors [roughly sqrt(N/2)], weight by distance, the Minkowski distance metric, and use a power parameter p = 1)
+-Voting (using 5 K Nearest Neighbor classifiers like in the first model, but with K values of 10, 30, 50, 70, and 90, and a soft voting policy [using the sum of the probability for each category]
 -Gaussian Naive Bayes
--
+-Stochastic Gradient Descent (optimized with the modified Huber loss function and l1 penalty term)
+-Random Forest (with 10 trees)
+-Decision Tree
+-K Nearest Neighbors (using 5 nearest neighbors, uniform weights, the Minkowski distance metric, and power parameter p = 2)
+-Ada Boost (using a Decision Tree classifier and 100 estimators)
+-Support Vector Machine (using the cosine distance kernel on the 9 dimensional transformed feature vector)
 
 Results
 We used overall accuracy, category-wise accuracy, a confusion matrix, and the execution time to gauge the effectiveness of each model.
+
 Discussion and Conclusion
 
 [1] https://www.ee.columbia.edu/~dpwe/papers/Wang03-shazam.pdf
 [2] http://auditorydumpling.com/shazam/
 [3] http://ismir2001.ismir.net/pdf/tzanetakis.pdf
+
+Code references:
+[1] http://matplotlib.org/examples/api/barchart_demo.html
+[2] http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
+[3] http://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html
+[4] http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html
+[5] http://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html
+[6] http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html
+[7] http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
+[8]
 
 Data:
 Loaded 1000 songs
